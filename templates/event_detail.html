@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="event-detail">
+  {% if event %}
+    <h1>{{ event.title }}</h1>
+    <p>{{ event.description }}</p>
+    <p><strong>Venue ID:</strong> {{ event.venue_id }}</p>
+    <p><strong>Date:</strong> {{ event.event_date }}</p>
+    <a class="btn btn-primary" href="/events">Back to Events</a>
+  {% else %}
+    <h1>Event Not Found</h1>
+    <p>The requested event could not be found.</p>
+  {% endif %}
+</section>
+{% endblock %}

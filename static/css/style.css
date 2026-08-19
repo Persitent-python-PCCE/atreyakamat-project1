@@ -1,0 +1,153 @@
+:root {
+  --primary: #F54828;
+  --primary-light: #F5634A;
+  --burgundy: #490E13;
+  --dark-red: #731210;
+  --black: #000000;
+  --white: #ffffff;
+  --surface: #fff7f5;
+  --muted: #5f4f50;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #fffdfd;
+  color: var(--black);
+}
+
+.container {
+  width: min(1100px, 90%);
+  margin: 0 auto;
+}
+
+.topbar {
+  background: var(--burgundy);
+  color: var(--white);
+  padding: 1rem 0;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.05rem;
+}
+
+nav {
+  display: flex;
+  gap: 1.2rem;
+}
+
+nav a {
+  color: var(--white);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.hero {
+  padding: 5rem 0 3rem;
+  background: linear-gradient(135deg, rgba(245, 72, 40, 0.08), rgba(73, 14, 19, 0.05));
+}
+
+.eyebrow {
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  line-height: 1.1;
+  margin: 0.5rem 0 1rem;
+}
+
+.hero p {
+  max-width: 650px;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.4rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.btn-secondary {
+  background: var(--burgundy);
+  color: var(--white);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0 3rem;
+}
+
+.card, .event-card, .auth-box, .event-detail {
+  background: var(--surface);
+  border: 1px solid rgba(115, 18, 16, 0.12);
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.page-header {
+  margin-top: 2rem;
+}
+
+.event-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0 3rem;
+}
+
+.auth-box {
+  margin: 3rem auto;
+  max-width: 460px;
+}
+
+.auth-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.auth-box input {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #d7d1d1;
+  border-radius: 8px;
+}
+
+.status, .empty-state {
+  color: var(--dark-red);
+  font-weight: 600;
+}

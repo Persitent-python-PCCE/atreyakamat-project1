@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="auth-box">
+  <h2>Login</h2>
+  {% if result %}
+    <p class="status">{{ result.message }}</p>
+  {% endif %}
+  <form method="post">
+    <label>Email</label>
+    <input type="email" name="email" placeholder="user@example.com" required>
+
+    <label>Password</label>
+    <input type="password" name="password" placeholder="Password" required>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+  </form>
+</section>
+{% endblock %}

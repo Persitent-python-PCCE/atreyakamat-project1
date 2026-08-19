@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Your Seat. Your Event. Your Moment.</p>
+    <h1>Smart Event Ticket Booking & Management Platform</h1>
+    <p>
+      Discover events, book tickets safely, and manage your bookings in one modern platform.
+    </p>
+    <div class="actions">
+      <a class="btn btn-primary" href="/events">Explore Events</a>
+      <a class="btn btn-secondary" href="/login">Admin Login</a>
+    </div>
+  </div>
+</section>
+
+<section class="card-grid">
+  <article class="card feature">
+    <h3>Search & Filters</h3>
+    <p>Find events by title, venue, date, or tag with a clean discovery flow.</p>
+  </article>
+  <article class="card feature">
+    <h3>Seat Selection</h3>
+    <p>Provide a visual seat map and validate availability on the backend.</p>
+  </article>
+  <article class="card feature">
+    <h3>Ticket Verification</h3>
+    <p>Generate QR codes and unique ticket URLs for secure validation.</p>
+  </article>
+</section>
+{% endblock %}
