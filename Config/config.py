@@ -1,20 +1,25 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "seatmeup-dev-secret")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        "mysql+pymysql://root:root@localhost:3306/seatmeup"
+    SQLALCHEMY_DATABASE_URI = (
+        "mysql+pymysql://{user}:{password}@{host}:{port}/{database}".format(
+            user=os.environ.get("DB_USER", "root"),
+            password=os.environ.get("DB_PASSWORD", ""),
+            host=os.environ.get("DB_HOST", "localhost"),
+            port=os.environ.get("DB_PORT", "3306"),
+            database=os.environ.get("DB_NAME", "seatmeup"),
+        )
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
-    ALLOWED_POSTER_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
-    ALLOWED_ID_EXTENSIONS = {"png", "jpg", "jpeg", "pdf"}
 
 
 class DevelopmentConfig(Config):
