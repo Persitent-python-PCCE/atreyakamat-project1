@@ -9,8 +9,8 @@ load_dotenv(BASE_DIR / ".env")
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "seatmeup-dev-secret")
-    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "seatmeup-jwt-secret-key-12345")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "seatmeup-dev-secret-key-2026-very-secure")
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "seatmeup-super-secret-jwt-key-2026-very-secure")
     JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_COOKIE_CSRF_PROTECT = False  # simple for beginners
     SQLALCHEMY_DATABASE_URI = (

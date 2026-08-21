@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h2 fw-bold text-dark mb-1">My Bookings</h1>
+      <p class="text-muted mb-0">View all your confirmed and past reservations</p>
+    </div>
+    <a href="/events" class="btn btn-danger">Book New Event</a>
+  </div>
+
+  <div class="card shadow-sm border-0 bg-white p-4">
+    {% if bookings and bookings|length > 0 %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Booking Reference</th>
+              <th>Date Booked</th>
+              <th>Total Amount</th>
+              <th>Discount</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in bookings %}
+              <tr>
+                <td><strong class="font-monospace">{{ b.booking_reference }}</strong></td>
+                <td class="text-muted">{{ b.booked_at[:10] if b.booked_at else '—' }}</td>
+                <td class="fw-bold">${{ "%.2f"|format(b.total_amount or 0.0) }}</td>
+                <td class="text-secondary">${{ "%.2f"|format(b.discount_amount or 0.0) }}</td>
+                <td>
+                  <span class="badge {% if b.status == 'confirmed' %}bg-success{% elif b.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %} text-capitalize">
+                    {{ b.status }}
+                  </span>
+                </td>
+                <td>
+                  <a href="/api/bookings/reference/{{ b.booking_reference }}" class="btn btn-sm btn-outline-dark" target="_blank">View Details</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-5 text-muted">
+        <div class="fs-1 mb-2">🎟️</div>
+        <h5>No bookings found</h5>
+        <p class="text-secondary small mb-3">You have not booked any event tickets yet.</p>
+        <a href="/events" class="btn btn-danger">Browse Events</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

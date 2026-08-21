@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row my-4">
+  <!-- Admin Sidebar -->
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-0 bg-white p-3">
+      <h5 class="fw-bold text-dark px-3 py-2 mb-2 border-bottom">Admin Menu</h5>
+      <div class="nav flex-column nav-pills">
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
+        <a class="nav-link active bg-danger text-white mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-9">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold text-dark mb-1">Bookings Overview</h2>
+        <p class="text-muted mb-0">System-wide reservation logs</p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 bg-white p-4">
+      <p class="text-muted mb-0">Use the API endpoints <code>/api/bookings</code> for granular programmatic query and management.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
