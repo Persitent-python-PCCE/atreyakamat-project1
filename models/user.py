@@ -22,3 +22,17 @@ class User(BaseModel):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
     )
+
+    bookings = db.relationship("Booking", back_populates="user")
+    seat_holds = db.relationship("SeatHold", back_populates="user")
+    promo_code_usages = db.relationship("PromoCodeUsage", back_populates="user")
+    reward_transactions = db.relationship("RewardTransaction", back_populates="user")
+    notifications = db.relationship("Notification", back_populates="user")
+    uploaded_files = db.relationship("UploadedFile", back_populates="user")
+    email_logs = db.relationship("EmailLog", back_populates="user")
+    created_events = db.relationship(
+        "Event", back_populates="creator", foreign_keys="Event.created_by"
+    )
+    event_reschedules = db.relationship(
+        "EventReschedule", back_populates="admin"
+    )

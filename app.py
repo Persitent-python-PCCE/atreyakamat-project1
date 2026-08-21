@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-
+from Controller.home_controller import *
 from Config.config import DevelopmentConfig
 
 
@@ -19,8 +19,7 @@ def create_app(config_class=DevelopmentConfig):
 
     @app.route("/")
     def home():
-        return "SeatMeUp is running."
-
+        return index()
     return app
 
 
