@@ -1,12 +1,15 @@
 # Controller/auth_controller.py
 #
-# AuthController — handles authentication for both REST API and Jinja2 Web routes.
+# AuthController — handles authentication for REST API and Jinja2 Web routes.
 #
 # Endpoints:
 #   API:
 #     POST /api/auth/register
 #     POST /api/auth/login
 #     GET  /api/auth/me
+#     GET  /api/auth/customer-test
+#     GET  /api/auth/admin-test
+#     POST /api/auth/logout
 #   Web:
 #     GET/POST /login
 #     GET/POST /register
@@ -24,11 +27,13 @@ from flask import (
 from flask_jwt_extended import (
     jwt_required,
     get_jwt_identity,
+    get_jwt,
     set_access_cookies,
     unset_jwt_cookies,
 )
 
 from Services.auth_service import AuthService
+from Controller.auth_guards import role_required
 
 api_auth_bp = Blueprint("api_auth_bp", __name__)
 web_auth_bp = Blueprint("web_auth_bp", __name__)
@@ -64,6 +69,48 @@ def api_me():
     user_id = int(get_jwt_identity())
     result = auth_service.get_me(user_id)
     return jsonify(result), result.get("status", 200)
+
+
+@api_auth_bp.get("/customer-test")
+@jwt_required()
+@role_required("customer", "admin")
+def customer_test():
+    """Protected endpoint accessible to authenticated customers and admins."""
+    user_id = int(get_jwt_identity())
+    role = get_jwt().get("role")
+    return jsonify({
+        "success": True,
+        "message": "Customer endpoint accessed successfully",
+        "data": {
+            "user_id": user_id,
+            "role": role
+        }
+    }), 200
+
+
+@api_auth_bp.get("/admin-test")
+@jwt_required()
+@role_required("admin")
+def admin_test():
+    """Protected endpoint accessible ONLY to admins."""
+    user_id = int(get_jwt_identity())
+    role = get_jwt().get("role")
+    return jsonify({
+        "success": True,
+        "message": "Admin endpoint accessed successfully",
+        "data": {
+            "user_id": user_id,
+            "role": role
+        }
+    }), 200
+
+
+@api_auth_bp.post("/logout")
+def api_logout():
+    """Log out API client."""
+    response = jsonify({"success": True, "message": "Logged out successfully"})
+    unset_jwt_cookies(response)
+    return response, 200
 
 
 # ==================================================================== #
