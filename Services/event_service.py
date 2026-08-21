@@ -10,7 +10,7 @@
 # combined. Service -> Service calls can get tangled quickly, so we avoid
 # them at this beginner stage.
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from DAO import EventDAO, CategoryDAO, VenueDAO, UserDAO
 from models.event import Event
@@ -68,13 +68,23 @@ class EventService:
                 return fail("event_date must be YYYY-MM-DD", 400)
         if not isinstance(ev_date, date) or isinstance(ev_date, datetime):
             return fail("event_date must be a date", 400)
-        # Note: we do NOT reject past dates here because editing past draft
-        # events is occasionally useful at this stage. The full rule
-        # ("published events can't be in the past") belongs to a later
-        # workflow and will be enforced there.
 
-        # 4) Build the Event. We trust start_time/end_time come as time
-        # objects or HH:MM:SS strings; Flask SQL will accept either.
+        # 4) Parse start_time and end_time if strings
+        st_time = data["start_time"]
+        if isinstance(st_time, str):
+            try:
+                st_time = time.fromisoformat(st_time)
+            except ValueError:
+                return fail("start_time must be HH:MM or HH:MM:SS", 400)
+
+        end_t = data.get("end_time")
+        if isinstance(end_t, str) and end_t.strip():
+            try:
+                end_t = time.fromisoformat(end_t)
+            except ValueError:
+                return fail("end_time must be HH:MM or HH:MM:SS", 400)
+
+        # 5) Build the Event model object
         event = Event(
             title=data["title"],
             category_id=data["category_id"],
@@ -82,8 +92,8 @@ class EventService:
             created_by=data["created_by"],
             description=data.get("description"),
             event_date=ev_date,
-            start_time=data["start_time"],
-            end_time=data.get("end_time"),
+            start_time=st_time,
+            end_time=end_t,
             poster=data.get("poster"),
             booking_open=data.get("booking_open", True),
             status=data.get("status", "draft"),
@@ -153,12 +163,30 @@ class EventService:
 
         # Plain editable fields
         for field in [
-            "title", "description", "start_time", "end_time",
+            "title", "description",
             "poster", "booking_open", "status", "requires_seats",
             "base_price",
         ]:
             if field in data:
                 setattr(event, field, data[field])
+
+        if "start_time" in data:
+            st = data["start_time"]
+            if isinstance(st, str):
+                try:
+                    st = time.fromisoformat(st)
+                except ValueError:
+                    return fail("start_time must be HH:MM or HH:MM:SS", 400)
+            event.start_time = st
+
+        if "end_time" in data:
+            et = data["end_time"]
+            if isinstance(et, str) and et.strip():
+                try:
+                    et = time.fromisoformat(et)
+                except ValueError:
+                    return fail("end_time must be HH:MM or HH:MM:SS", 400)
+            event.end_time = et
 
         # event_date — parse/validate the same way as create
         if "event_date" in data:

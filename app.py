@@ -1,8 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from Controller.home_controller import *
 from Config.config import DevelopmentConfig
-
 
 db = SQLAlchemy()
 
@@ -28,6 +26,7 @@ def create_app(config_class=DevelopmentConfig):
 
     @app.route("/")
     def home():
+        from Controller.home_controller import index
         return index()
     return app
 

@@ -29,15 +29,15 @@ from .serializers import ok, err  # noqa: F401  (re-exported for convenience)
 # registration logic stays in one place. Actual blueprint objects are
 # imported lazily inside register_blueprints() to avoid circular imports.
 ALL_BLUEPRINT_SPECS = [
-    ("api.user_routes:user_bp", "/api/users"),
-    ("api.category_routes:category_bp", "/api/categories"),
-    ("api.venue_routes:venue_bp", "/api/venues"),
-    ("api.event_routes:event_bp", "/api/events"),
-    ("api.seat_routes:seat_bp", "/api"),
-    ("api.booking_routes:booking_bp", "/api"),
-    ("api.ticket_routes:ticket_bp", "/api"),
-    ("api.notification_routes:notification_bp", "/api"),
-    ("api.promo_routes:promo_bp", "/api/promos"),
+    ("Controller.user_controller:user_bp", "/api/users"),
+    ("Controller.category_controller:category_bp", "/api/categories"),
+    ("Controller.venue_controller:venue_bp", "/api/venues"),
+    ("Controller.event_controller:event_bp", "/api/events"),
+    ("Controller.seat_controller:seat_bp", "/api"),
+    ("Controller.booking_controller:booking_bp", "/api"),
+    ("Controller.ticket_controller:ticket_bp", "/api"),
+    ("Controller.notification_controller:notification_bp", "/api"),
+    ("Controller.promo_controller:promo_bp", "/api/promos"),
 ]
 
 
