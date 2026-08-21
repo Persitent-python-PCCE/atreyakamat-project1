@@ -6,7 +6,9 @@
 #     HTTP Request -> TicketController -> TicketService -> TicketDAO / TicketVerificationDAO -> MySQL
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from Services.ticket_service import TicketService
+from Controller.auth_guards import role_required
 
 ticket_bp = Blueprint("ticket_bp", __name__)
 ticket_service = TicketService()
@@ -20,6 +22,7 @@ def get_ticket_by_token(token):
 
 
 @ticket_bp.get("/bookings/<int:booking_id>/ticket")
+@jwt_required()
 def get_ticket_for_booking(booking_id):
     """Get ticket associated with a specific booking."""
     result = ticket_service.get_ticket_by_booking(booking_id)
@@ -27,8 +30,10 @@ def get_ticket_for_booking(booking_id):
 
 
 @ticket_bp.post("/tickets/<string:token>/verify")
+@jwt_required()
+@role_required("admin")
 def verify_ticket(token):
-    """Record a ticket verification attempt."""
+    """Record a ticket verification attempt (Admin / Scanner only)."""
     data = request.get_json(silent=True) or {}
     result = ticket_service.verify_ticket(token, data)
     return jsonify(result), result.get("status", 200)

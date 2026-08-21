@@ -12,6 +12,7 @@
 # The Controller (api/*_routes.py) then turns that dict into an HTTP response.
 
 from .user_service import UserService
+from .auth_service import AuthService
 from .category_service import CategoryService
 from .venue_service import VenueService
 from .event_service import EventService
@@ -29,6 +30,7 @@ from .email_log_service import EmailLogService
 
 __all__ = [
     "UserService",
+    "AuthService",
     "CategoryService",
     "VenueService",
     "EventService",

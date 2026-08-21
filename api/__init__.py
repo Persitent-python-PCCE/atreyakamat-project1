@@ -29,6 +29,8 @@ from .serializers import ok, err  # noqa: F401  (re-exported for convenience)
 # registration logic stays in one place. Actual blueprint objects are
 # imported lazily inside register_blueprints() to avoid circular imports.
 ALL_BLUEPRINT_SPECS = [
+    ("Controller.auth_controller:api_auth_bp", "/api/auth"),
+    ("Controller.auth_controller:web_auth_bp", ""),
     ("Controller.user_controller:user_bp", "/api/users"),
     ("Controller.category_controller:category_bp", "/api/categories"),
     ("Controller.venue_controller:venue_bp", "/api/venues"),

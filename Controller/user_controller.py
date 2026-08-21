@@ -2,71 +2,81 @@
 #
 # UserController — handles HTTP requests for user operations.
 #
-# Architecture flow:
+# Flow:
 #     HTTP Request -> UserController -> UserService -> UserDAO -> User Model -> MySQL
-#
-# Responsibilities:
-#   - receive the HTTP request
-#   - read JSON body / URL parameters
-#   - call the appropriate UserService method
-#   - return the JSON response with the appropriate HTTP status code
-#
-# It does NOT:
-#   - query the database directly
-#   - contain SQLAlchemy logic
-#   - contain password hashing or complex business logic
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from Services.user_service import UserService
+from Controller.auth_guards import role_required
 
 user_bp = Blueprint("user_bp", __name__)
 user_service = UserService()
 
 
 @user_bp.post("")
+@jwt_required()
+@role_required("admin")
 def create_user():
-    """Create a new user.
-
-    Request Body (JSON):
-        name (required), email (required), password_hash (required),
-        role (optional, default "customer"), phone, id_document
-    """
+    """Create a new user (Admin only)."""
     data = request.get_json(silent=True) or {}
     result = user_service.create_user(data)
     return jsonify(result), result.get("status", 200)
 
 
 @user_bp.get("")
+@jwt_required()
+@role_required("admin")
 def list_users():
-    """List all users."""
+    """List all users (Admin only)."""
     result = user_service.get_all_users()
     return jsonify(result), result.get("status", 200)
 
 
 @user_bp.get("/<int:user_id>")
+@jwt_required()
 def get_user(user_id):
-    """Get a single user by primary key id."""
+    """Get a single user by id (Admin or account owner)."""
+    current_user_id = int(get_jwt_identity())
+    current_role = get_jwt().get("role")
+    if current_role != "admin" and current_user_id != user_id:
+        return jsonify({"success": False, "message": "You do not have permission to access this resource"}), 403
+
     result = user_service.get_user_by_id(user_id)
     return jsonify(result), result.get("status", 200)
 
 
 @user_bp.get("/email/<string:email>")
+@jwt_required()
+@role_required("admin")
 def get_user_by_email(email):
-    """Get a single user by email address."""
+    """Get a single user by email address (Admin only)."""
     result = user_service.get_user_by_email(email)
     return jsonify(result), result.get("status", 200)
 
 
 @user_bp.put("/<int:user_id>")
+@jwt_required()
 def update_user(user_id):
-    """Update an existing user's details."""
+    """Update an existing user's details (Admin or account owner)."""
+    current_user_id = int(get_jwt_identity())
+    current_role = get_jwt().get("role")
+    if current_role != "admin" and current_user_id != user_id:
+        return jsonify({"success": False, "message": "You do not have permission to access this resource"}), 403
+
     data = request.get_json(silent=True) or {}
+    # Non-admins cannot promote themselves to admin
+    if current_role != "admin" and "role" in data:
+        data.pop("role")
+
     result = user_service.update_user(user_id, data)
     return jsonify(result), result.get("status", 200)
 
 
 @user_bp.delete("/<int:user_id>")
+@jwt_required()
+@role_required("admin")
 def delete_user(user_id):
-    """Delete a user by id."""
+    """Delete a user by id (Admin only)."""
     result = user_service.delete_user(user_id)
     return jsonify(result), result.get("status", 200)

@@ -10,6 +10,9 @@ load_dotenv(BASE_DIR / ".env")
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "seatmeup-dev-secret")
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "seatmeup-jwt-secret-key-12345")
+    JWT_TOKEN_LOCATION = ["headers", "cookies"]
+    JWT_COOKIE_CSRF_PROTECT = False  # simple for beginners
     SQLALCHEMY_DATABASE_URI = (
         "mysql+pymysql://{user}:{password}@{host}:{port}/{database}".format(
             user=os.environ.get("DB_USER", "root"),
