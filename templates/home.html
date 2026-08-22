@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Hero Section with SeatMeUp Branding -->
+<!-- Hero Section with Search Input -->
 <section class="hero">
   <div class="container">
     <p class="eyebrow">Your Seat. Your Event. Your Moment.</p>
@@ -9,8 +9,17 @@
     <p>
       Discover concerts, theatre, sports, and live shows. Pick your favorite seats, book in seconds, and enjoy unforgettable experiences.
     </p>
+
+    <!-- Search Box in Hero -->
+    <div class="my-4" style="max-width: 600px;">
+      <form method="GET" action="/events" class="d-flex gap-2">
+        <input type="text" name="search" class="form-control form-control-lg" placeholder="Search events by title or keyword..." style="background: #ffffff;">
+        <button type="submit" class="btn btn-primary btn-lg px-4">Search</button>
+      </form>
+    </div>
+
     <div class="actions">
-      <a class="btn btn-primary" href="/events">Explore Events</a>
+      <a class="btn btn-primary" href="/events">Explore All Events</a>
       {% if not current_user %}
         <a class="btn btn-secondary" href="/register">Create Account</a>
       {% else %}
@@ -20,10 +29,30 @@
   </div>
 </section>
 
-<!-- Featured / Upcoming Events Section -->
+<!-- Event Categories Section -->
+{% if categories and categories|length > 0 %}
+<section class="my-5">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Browse by Category</h3>
+    <a href="/events" class="fw-bold text-decoration-none small" style="color: var(--primary);">View All &rarr;</a>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% for cat in categories %}
+      <a href="/events?category={{ cat.name }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1rem; border-color: var(--border); color: var(--burgundy) !important; background: var(--surface) !important;">
+        🏷️ {{ cat.name }}
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Upcoming Events Section -->
 <section class="my-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="h3 fw-bold" style="color: var(--burgundy); margin: 0;">Upcoming Events</h2>
+    <div>
+      <h2 class="h3 fw-bold" style="color: var(--burgundy); margin: 0;">Upcoming Events</h2>
+      <p class="text-muted small mb-0">Book early to secure your preferred seats</p>
+    </div>
     <a href="/events" class="fw-bold text-decoration-none" style="color: var(--primary);">View All Events &rarr;</a>
   </div>
 
@@ -35,18 +64,33 @@
             {% if event.poster %}
               <img src="{{ event.poster }}" class="card-img-top rounded mb-3" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
             {% else %}
-              <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center mb-3" style="height: 180px; background: var(--burgundy) !important;">
-                <span class="fs-3">🎭</span>
+              <div class="rounded d-flex align-items-center justify-content-center mb-3 text-white" style="height: 180px; background: var(--burgundy);">
+                <span class="fs-2">🎭</span>
               </div>
             {% endif %}
+
             <div class="d-flex flex-column flex-grow-1">
-              <h4 class="fw-bold mb-1" style="color: var(--burgundy);">{{ event.title }}</h4>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge-smu">{{ event.category_name or 'Event' }}</span>
+                {% if event.status == 'published' %}
+                  <span class="badge bg-success small">Available</span>
+                {% else %}
+                  <span class="badge bg-secondary small text-capitalize">{{ event.status }}</span>
+                {% endif %}
+              </div>
+
+              <h4 class="fw-bold my-2" style="color: var(--burgundy);">{{ event.title }}</h4>
+
               <p class="text-muted small mb-2">
                 📅 {{ event.event_date }} {% if event.start_time %}• ⏰ {{ event.start_time }}{% endif %}
               </p>
-              <p class="text-secondary small mb-3 flex-grow-1">
-                {{ event.description|truncate(85) if event.description else 'Join us for this exciting live event.' }}
+              <p class="text-muted small mb-2">
+                📍 {{ event.venue_name or 'Main Venue' }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}
               </p>
+              <p class="text-secondary small mb-3 flex-grow-1">
+                {{ event.description|truncate(80) if event.description else 'Join us for this exciting live event.' }}
+              </p>
+
               <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
                 <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
                 <a href="/events/{{ event.id }}" class="btn btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">View Details</a>
@@ -67,21 +111,5 @@
       {% endif %}
     </div>
   {% endif %}
-</section>
-
-<!-- Feature Pillars -->
-<section class="card-grid">
-  <article class="card feature">
-    <h3>Search &amp; Filters</h3>
-    <p class="text-muted small mb-0">Find events by title, venue, date, or category with a clean discovery flow.</p>
-  </article>
-  <article class="card feature">
-    <h3>Seat Selection</h3>
-    <p class="text-muted small mb-0">Select your preferred seats with live validation and temporary hold mechanisms.</p>
-  </article>
-  <article class="card feature">
-    <h3>Instant Ticketing</h3>
-    <p class="text-muted small mb-0">Receive secure digital tickets with verification tokens directly in your account.</p>
-  </article>
 </section>
 {% endblock %}

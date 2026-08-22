@@ -43,7 +43,7 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="container my-4 flex-grow-1">
+    <main class="container my-4 flex-grow-1 page-content">
       {% block content %}{% endblock %}
     </main>
 
@@ -57,5 +57,15 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- GSAP for subtle smooth UI animations -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (typeof gsap !== "undefined") {
+          gsap.from(".hero", { opacity: 0, y: 15, duration: 0.5, ease: "power1.out" });
+          gsap.from(".card", { opacity: 0, y: 10, duration: 0.4, stagger: 0.05, ease: "power1.out" });
+        }
+      });
+    </script>
   </body>
 </html>

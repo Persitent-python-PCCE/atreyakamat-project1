@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <!-- Breadcrumbs -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: var(--muted);">Home</a></li>
+      <li class="breadcrumb-item"><a href="/events" class="text-decoration-none" style="color: var(--muted);">Events</a></li>
+      <li class="breadcrumb-item"><a href="/events/{{ event.id }}/seats" class="text-decoration-none" style="color: var(--muted);">Select Seats</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">Checkout Preview</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 p-4">
+        <!-- Milestone Header -->
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="badge bg-success">Step Complete: Seat Hold Locked 🔒</span>
+          <span class="badge bg-primary">Next Milestone: Checkout &amp; Payment</span>
+        </div>
+
+        <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Checkout Preview</h2>
+        <p class="text-muted small mb-4">Your selected seats are currently held in the database for 1 minute.</p>
+
+        <!-- Event Summary Box -->
+        <div class="p-3 rounded mb-4" style="background: #ffffff; border: 1px solid var(--border);">
+          <h4 class="fw-bold mb-1" style="color: var(--burgundy);">{{ event.title }}</h4>
+          <p class="text-muted small mb-2">
+            📅 {{ event.event_date }} • ⏰ {{ event.start_time }}
+          </p>
+          <p class="text-muted small mb-0">
+            📍 {{ event.venue_name or 'Main Venue' }}
+          </p>
+        </div>
+
+        <!-- Held Seats List -->
+        <h5 class="fw-bold mb-3" style="color: var(--burgundy);">Held Seat Details</h5>
+        <div class="table-responsive mb-4">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Seat ID</th>
+                <th>Hold Token</th>
+                <th>Expires At</th>
+                <th>Remaining</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in holds %}
+                <tr>
+                  <td><strong>#{{ h.seat_id }}</strong></td>
+                  <td><code class="small text-muted">{{ h.hold_token[:13] }}...</code></td>
+                  <td class="text-muted small">{{ h.expires_at }}</td>
+                  <td><span class="badge bg-warning text-dark">{{ h.remaining_seconds }}s</span></td>
+                  <td><span class="badge bg-success text-capitalize">{{ h.status }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Notice Box -->
+        <div class="alert alert-info py-3 mb-4" role="alert">
+          <h6 class="fw-bold mb-1">🎉 Seat Hold Milestone Verified!</h6>
+          <p class="mb-0 small">
+            Your seat hold is active in the MySQL database. Checkout, payment processing, booking confirmation, QR codes, and PDF tickets will be unlocked in the next milestone.
+          </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-between">
+          <a href="/events/{{ event.id }}/seats" class="btn btn-secondary">&larr; Back to Seat Map</a>
+          <button class="btn btn-primary" disabled style="opacity: 0.7; cursor: not-allowed;" title="Checkout milestone is next">
+            Proceed to Payment (Next Step) &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

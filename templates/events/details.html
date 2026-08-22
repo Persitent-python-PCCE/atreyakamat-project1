@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: var(--muted);">Home</a></li>
+      <li class="breadcrumb-item"><a href="/events" class="text-decoration-none" style="color: var(--muted);">Events</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">{{ event.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm border-0 p-4">
+    <div class="row g-4">
+      <!-- Poster / Media Frame -->
+      <div class="col-md-5 d-flex align-items-center justify-content-center p-3 rounded" style="background: var(--burgundy); min-height: 340px;">
+        {% if event.poster %}
+          <img src="{{ event.poster }}" class="img-fluid rounded shadow" alt="{{ event.title }}" style="max-height: 360px; object-fit: contain;">
+        {% else %}
+          <div class="text-center text-white p-4">
+            <div class="display-2 mb-2">🎭</div>
+            <h4 class="text-white">{{ event.title }}</h4>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Event Info & Specs -->
+      <div class="col-md-7 d-flex flex-column">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge-smu">{{ category.name if category else (event.category_name or 'Live Event') }}</span>
+          {% if event.booking_open %}
+            <span class="badge bg-success">Booking Open</span>
+          {% else %}
+            <span class="badge bg-secondary">Booking Closed</span>
+          {% endif %}
+          <span class="badge bg-light text-dark border">
+            {% if event.requires_seats %}💺 Seated Event{% else %}🎟️ General Admission{% endif %}
+          </span>
+          <span class="badge bg-light text-secondary border text-capitalize">{{ event.status }}</span>
+        </div>
+
+        <h1 class="fw-bold mb-3" style="color: var(--burgundy);">{{ event.title }}</h1>
+
+        <div class="row g-3 mb-4 text-muted">
+          <div class="col-sm-6">
+            <div class="d-flex align-items-center">
+              <span class="fs-4 me-2">📅</span>
+              <div>
+                <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Date</small>
+                <strong class="text-dark">{{ event.event_date }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex align-items-center">
+              <span class="fs-4 me-2">⏰</span>
+              <div>
+                <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Time</small>
+                <strong class="text-dark">{{ event.start_time }} {% if event.end_time %}– {{ event.end_time }}{% endif %}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12">
+            <div class="d-flex align-items-center">
+              <span class="fs-4 me-2">📍</span>
+              <div>
+                <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Venue &amp; Location</small>
+                <strong class="text-dark">{{ venue.name if venue else (event.venue_name or 'Main Venue') }}</strong>
+                {% if venue and venue.address %}
+                  <span class="text-secondary small d-block">{{ venue.address }}{% if venue.city %}, {{ venue.city }}{% endif %}</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h5 class="fw-bold mb-2" style="color: var(--burgundy);">About This Event</h5>
+          <p class="text-secondary leading-relaxed small">
+            {{ event.description or 'No detailed description provided for this event.' }}
+          </p>
+        </div>
+
+        <!-- Booking Action CTA -->
+        <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted small d-block">Starting from</span>
+            <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
+          </div>
+
+          <div>
+            {% if current_user %}
+              <a href="/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
+                Select Seats 💺
+              </a>
+            {% else %}
+              <a href="/login?next=/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
+                Login to Select Seats 🎟️
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

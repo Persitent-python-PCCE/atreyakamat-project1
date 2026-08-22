@@ -125,12 +125,13 @@ class EventService:
         return ok("Upcoming events retrieved",
                   [event_to_dict(e) for e in events])
 
-    def get_events_by_category(self, category_id: int) -> dict:
-        # We don't fail if the category doesn't exist — the DAO will just
-        # return an empty list, which is honest ("no events in that
-        # category"). If the caller wants a clean 404, they can use the
-        # Category API first.
-        events = self.event_dao.get_events_by_category(category_id)
+    def get_events_by_category(self, category) -> dict:
+        if isinstance(category, int) or (isinstance(category, str) and category.isdigit()):
+            events = self.event_dao.get_events_by_category(int(category))
+        elif isinstance(category, str) and category.strip():
+            events = self.event_dao.get_events_by_category_name(category.strip())
+        else:
+            events = []
         return ok("Events by category retrieved",
                   [event_to_dict(e) for e in events])
 

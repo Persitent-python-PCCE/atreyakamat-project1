@@ -95,10 +95,16 @@ def venue_to_dict(venue):
 
 
 def event_to_dict(event):
+    cat_name = event.category.name if getattr(event, "category", None) else None
+    ven_name = event.venue.name if getattr(event, "venue", None) else None
+    ven_city = event.venue.city if getattr(event, "venue", None) else None
     return {
         "id": event.id,
         "category_id": event.category_id,
+        "category_name": cat_name,
         "venue_id": event.venue_id,
+        "venue_name": ven_name,
+        "venue_city": ven_city,
         "created_by": event.created_by,
         "title": event.title,
         "description": event.description,
@@ -191,4 +197,17 @@ def promo_code_to_dict(p):
         "valid_until": _ser(p.valid_until),
         "is_active": p.is_active,
         "created_at": _ser(p.created_at),
+    }
+
+
+def seat_hold_to_dict(h):
+    return {
+        "id": h.id,
+        "event_id": h.event_id,
+        "seat_id": h.seat_id,
+        "user_id": h.user_id,
+        "hold_token": h.hold_token,
+        "held_at": _ser(h.held_at),
+        "expires_at": _ser(h.expires_at),
+        "status": h.status,
     }

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row my-4">
+  <!-- Admin Sidebar -->
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
+      <div class="nav flex-column nav-pills">
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
+        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/events" style="border-radius: 8px; color: var(--white) !important;">🎭 Events</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Events Management Content -->
+  <div class="col-md-9">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Event Management</h2>
+        <p class="text-muted mb-0">Create, update, and manage all events</p>
+      </div>
+      <a href="/admin/events/create" class="btn btn-primary">+ Create Event</a>
+    </div>
+
+    <div class="card shadow-sm border-0 p-4">
+      {% if events and events|length > 0 %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Event</th>
+                <th>Category</th>
+                <th>Venue</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Price</th>
+                <th>Booking Open</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in events %}
+                <tr>
+                  <td>#{{ e.id }}</td>
+                  <td><strong>{{ e.title }}</strong></td>
+                  <td><span class="badge-smu">{{ e.category_name or 'Category' }}</span></td>
+                  <td class="text-muted small">{{ e.venue_name or 'Venue' }}</td>
+                  <td class="text-muted small">{{ e.event_date }}</td>
+                  <td>
+                    <span class="badge {% if e.status == 'published' %}bg-success{% elif e.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} text-capitalize">
+                      {{ e.status }}
+                    </span>
+                  </td>
+                  <td class="fw-bold" style="color: var(--primary);">${{ "%.2f"|format(e.base_price or 0.0) }}</td>
+                  <td>
+                    {% if e.booking_open %}
+                      <span class="badge bg-success">Yes</span>
+                    {% else %}
+                      <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="/events/{{ e.id }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="View event page">View</a>
+                      <a href="/admin/events/{{ e.id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit event">Edit</a>
+                      <form method="POST" action="/admin/events/{{ e.id }}/delete" onsubmit="return confirm('Are you sure you want to delete event &quot;{{ e.title }}&quot;?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete event">Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <h5>No events found</h5>
+          <p class="small text-secondary mb-3">Get started by creating your first event.</p>
+          <a href="/admin/events/create" class="btn btn-primary">+ Create Event</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

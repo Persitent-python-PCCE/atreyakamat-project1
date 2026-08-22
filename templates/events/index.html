@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <!-- Page Header & Search -->
+  <div class="row align-items-center mb-4">
+    <div class="col-md-6">
+      <h1 class="h2 fw-bold mb-1" style="color: var(--burgundy);">Explore Events</h1>
+      <p class="text-muted mb-0">Browse and find tickets for live concerts, shows, and games</p>
+    </div>
+    <div class="col-md-6 mt-3 mt-md-0">
+      <form method="GET" action="/events" class="d-flex gap-2">
+        {% if active_category %}
+          <input type="hidden" name="category" value="{{ active_category }}">
+        {% endif %}
+        <input type="text" name="search" class="form-control" placeholder="Search events by title or keyword..." value="{{ search_query or '' }}" style="background: #ffffff;">
+        <button type="submit" class="btn btn-primary px-4">Search</button>
+        {% if search_query or active_category %}
+          <a href="/events" class="btn btn-secondary">Clear</a>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Filter Pills -->
+  {% if categories and categories|length > 0 %}
+    <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+      <span class="text-muted small fw-bold me-1">Category:</span>
+      <a href="/events{% if search_query %}?search={{ search_query }}{% endif %}" class="btn btn-sm {% if not active_category %}btn-primary{% else %}btn-outline-secondary{% endif %}" style="border-radius: 20px; padding: 0.3rem 0.9rem;">
+        All Categories
+      </a>
+      {% for cat in categories %}
+        <a href="/events?category={{ cat.name }}{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-sm {% if active_category == cat.name %}btn-primary{% else %}btn-outline-secondary{% endif %}" style="border-radius: 20px; padding: 0.3rem 0.9rem;">
+          {{ cat.name }}
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Active filter badges indicator -->
+  {% if active_category or search_query %}
+    <div class="mb-3">
+      <span class="text-muted small">Showing results for: </span>
+      {% if active_category %}
+        <span class="badge-smu me-1">Category: {{ active_category }}</span>
+      {% endif %}
+      {% if search_query %}
+        <span class="badge bg-secondary me-1">Search: "{{ search_query }}"</span>
+      {% endif %}
+      <a href="/events" class="small text-danger ms-2 text-decoration-none">&times; Reset all filters</a>
+    </div>
+  {% endif %}
+
+  <!-- Events Grid -->
+  {% if events and events|length > 0 %}
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      {% for event in events %}
+        <div class="col">
+          <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+            {% if event.poster %}
+              <img src="{{ event.poster }}" class="card-img-top rounded mb-3" alt="{{ event.title }}" style="height: 190px; object-fit: cover;">
+            {% else %}
+              <div class="rounded d-flex align-items-center justify-content-center mb-3 text-white" style="height: 190px; background: var(--burgundy);">
+                <span class="fs-2">🎭</span>
+              </div>
+            {% endif %}
+
+            <div class="d-flex flex-column flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge-smu">{{ event.category_name or 'Event' }}</span>
+                {% if event.status == 'published' %}
+                  <span class="badge bg-success small">Available</span>
+                {% else %}
+                  <span class="badge bg-secondary small text-capitalize">{{ event.status }}</span>
+                {% endif %}
+              </div>
+
+              <h4 class="fw-bold my-2" style="color: var(--burgundy);">{{ event.title }}</h4>
+
+              <p class="text-muted small mb-1">
+                📅 {{ event.event_date }} {% if event.start_time %}• ⏰ {{ event.start_time }}{% endif %}
+              </p>
+              <p class="text-muted small mb-2">
+                📍 {{ event.venue_name or 'Main Venue' }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}
+              </p>
+
+              <p class="text-secondary small mb-3 flex-grow-1">
+                {{ event.description|truncate(85) if event.description else 'Join us for this exciting live event.' }}
+              </p>
+
+              <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                <div>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">Price</small>
+                  <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
+                </div>
+                <a href="/events/{{ event.id }}" class="btn btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">View Details</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card p-5 text-center my-4">
+      <h4 class="text-muted mb-2">No events match your criteria</h4>
+      <p class="text-secondary small mb-3">Try clearing search terms or selecting a different category.</p>
+      <a href="/events" class="btn btn-primary btn-sm align-self-center">View All Events</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

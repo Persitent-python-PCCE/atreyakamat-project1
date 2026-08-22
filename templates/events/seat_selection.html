@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: var(--muted);">Home</a></li>
+      <li class="breadcrumb-item"><a href="/events" class="text-decoration-none" style="color: var(--muted);">Events</a></li>
+      <li class="breadcrumb-item"><a href="/events/{{ event.id }}" class="text-decoration-none" style="color: var(--muted);">{{ event.title }}</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">Select Seats</li>
+    </ol>
+  </nav>
+
+  <!-- Event Header Card -->
+  <div class="card shadow-sm border-0 p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <span class="badge-smu mb-1">{{ event.category_name or 'Event' }}</span>
+        <h2 class="fw-bold mb-1" style="color: var(--burgundy);">{{ event.title }}</h2>
+        <p class="text-muted small mb-0">
+          📍 <strong>{{ venue.name if venue else (event.venue_name or 'Main Venue') }}</strong> •
+          📅 {{ event.event_date }} • ⏰ {{ event.start_time }}
+        </p>
+      </div>
+      <div class="text-md-end">
+        <span class="text-muted small d-block">Base Ticket Price</span>
+        <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Seat Map Container -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 p-4">
+        <!-- Stage / Screen Banner -->
+        <div class="text-center py-2 px-4 mb-4 rounded text-white fw-bold shadow-sm" style="background: var(--burgundy); letter-spacing: 0.15rem; font-size: 0.85rem;">
+          🎭 STAGE / SCREEN 🎭
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-4 pb-3 border-bottom small">
+          <div class="d-flex align-items-center gap-2">
+            <span class="seat-badge available"></span>
+            <span>Available</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="seat-badge held-by-me"></span>
+            <span>Selected (Held by You)</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="seat-badge held"></span>
+            <span>Held by Other</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="seat-badge booked"></span>
+            <span>Booked / Sold</span>
+          </div>
+        </div>
+
+        <!-- Seat Grid -->
+        {% if seats and seats|length > 0 %}
+          <div class="seat-grid-container p-3 rounded" style="background: #ffffff; border: 1px dashed var(--border);">
+            <div class="row row-cols-3 row-cols-sm-4 row-cols-md-6 g-2 justify-content-center" id="seat-grid">
+              {% for s in seats %}
+                <div class="col text-center">
+                  {% if s.status == 'available' %}
+                    <!-- Available: click to hold -->
+                    <button type="button" class="seat-btn available w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="hold" title="Seat {{ s.seat_number }} (${{ '%.2f'|format(s.price) }})">
+                      <div class="seat-num">{{ s.seat_number }}</div>
+                      <div class="seat-price">${{ "%.2f"|format(s.price) }}</div>
+                    </button>
+                  {% elif s.status == 'held_by_me' %}
+                    <!-- Held by Me: click to release -->
+                    <button type="button" class="seat-btn held-by-me w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="release" data-remaining="{{ s.hold.remaining_seconds if s.hold else 60 }}" title="Held by you — Click to deselect">
+                      <div class="seat-num">✓ {{ s.seat_number }}</div>
+                      <div class="seat-timer" id="timer-seat-{{ s.id }}">{{ s.hold.remaining_seconds if s.hold else 60 }}s</div>
+                    </button>
+                  {% elif s.status == 'held' %}
+                    <!-- Held by other -->
+                    <button type="button" class="seat-btn held w-100" disabled title="Currently held by another user">
+                      <div class="seat-num">⏳ {{ s.seat_number }}</div>
+                      <div class="seat-price">Held</div>
+                    </button>
+                  {% elif s.status == 'booked' %}
+                    <!-- Booked -->
+                    <button type="button" class="seat-btn booked w-100" disabled title="Already booked">
+                      <div class="seat-num">✕ {{ s.seat_number }}</div>
+                      <div class="seat-price">Sold</div>
+                    </button>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <h5>No seats configured for this venue yet</h5>
+            <p class="small">Please check back later or contact event support.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Selection Summary & 1-Minute Hold Panel -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 p-4 h-100 d-flex flex-column">
+        <h4 class="fw-bold mb-3" style="color: var(--burgundy);">Selection Summary</h4>
+
+        <!-- 1-Minute Hold Timer Banner -->
+        <div id="hold-banner" class="alert alert-warning py-2 small mb-3 {% if summary.user_held_count == 0 %}d-none{% endif %}">
+          <div class="d-flex align-items-center justify-content-between">
+            <span>⏳ <strong>1-Minute Hold Active</strong></span>
+            <span id="countdown-display" class="fw-bold text-danger">01:00</span>
+          </div>
+          <small class="d-block mt-1 text-muted" style="font-size: 0.75rem;">
+            Seats are held for 60 seconds to allow you to complete checkout.
+          </small>
+        </div>
+
+        <!-- Selected Seats Details -->
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between text-muted small mb-2">
+            <span>Selected Seats</span>
+            <strong id="summary-count" class="text-dark">{{ summary.user_held_count }}</strong>
+          </div>
+
+          <div class="d-flex justify-content-between text-muted small mb-3">
+            <span>Total Price</span>
+            <span class="fs-4 fw-bold" style="color: var(--primary);">$<span id="summary-total">{{ "%.2f"|format(summary.user_total_price or 0.0) }}</span></span>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="small text-secondary mb-3">
+            <p class="mb-1"><strong>ℹ️ How Seat Hold Works:</strong></p>
+            <ul class="ps-3 mb-0" style="font-size: 0.8rem; line-height: 1.4;">
+              <li>Click any available seat to place a <strong>1-minute hold</strong>.</li>
+              <li>Other buyers cannot select your held seats.</li>
+              <li>Click again to deselect and release the hold.</li>
+              <li>If the timer expires before checkout, the seat is released automatically.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Continue Button -->
+        <div class="mt-auto pt-3 border-top">
+          {% if summary.user_held_count > 0 %}
+            <a href="/events/{{ event.id }}/checkout" class="btn btn-primary w-100 py-2 fw-bold" id="continue-btn">
+              Continue to Checkout &rarr;
+            </a>
+          {% else %}
+            <button class="btn btn-secondary w-100 py-2 fw-bold" disabled id="continue-btn" style="opacity: 0.6; cursor: not-allowed;">
+              Select a Seat to Continue
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Seat Badges in Legend */
+.seat-badge {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+.seat-badge.available { background: #ffffff; border: 2px solid var(--primary); }
+.seat-badge.held-by-me { background: var(--primary); border: 2px solid var(--primary); }
+.seat-badge.held { background: #f39c12; border: 2px solid #e67e22; }
+.seat-badge.booked { background: #bdc3c7; border: 2px solid #95a5a6; }
+
+/* Interactive Seat Buttons */
+.seat-btn {
+  padding: 0.6rem 0.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+.seat-btn .seat-num { font-size: 0.85rem; }
+.seat-btn .seat-price, .seat-btn .seat-timer { font-size: 0.7rem; }
+
+.seat-btn.available {
+  background: #ffffff;
+  color: var(--burgundy);
+  border: 2px solid rgba(245, 72, 40, 0.4);
+}
+.seat-btn.available:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(245, 72, 40, 0.2);
+}
+
+.seat-btn.held-by-me {
+  background: var(--primary) !important;
+  color: var(--white) !important;
+  border: 2px solid var(--primary) !important;
+  box-shadow: 0 4px 10px rgba(245, 72, 40, 0.3);
+}
+.seat-btn.held-by-me:hover {
+  background: var(--primary-light) !important;
+}
+
+.seat-btn.held {
+  background: #fdf2e9;
+  color: #d35400;
+  border: 2px dashed #f39c12;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.seat-btn.booked {
+  background: #eaeded;
+  color: #7f8c8d;
+  border: 2px solid #bdc3c7;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+</style>
+
+<!-- Live Hold & Timer Management Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const eventId = {{ event.id }};
+
+  // Attach click handlers to all seat buttons
+  document.querySelectorAll(".seat-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      const action = this.getAttribute("data-action");
+      const seatId = this.getAttribute("data-seat-id");
+      if (!action || !seatId) return;
+
+      const url = `/events/${eventId}/seats/${seatId}/${action}`;
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // Reload page state cleanly
+          window.location.reload();
+        } else {
+          alert(data.message || "Could not update seat selection");
+          window.location.reload();
+        }
+      })
+      .catch(err => {
+        console.error("Seat selection error:", err);
+        window.location.reload();
+      });
+    });
+  });
+
+  // Countdown timer for held seats
+  let shortestRemaining = 60;
+  let hasHeldSeats = false;
+  document.querySelectorAll(".seat-btn.held-by-me").forEach(btn => {
+    const rem = parseInt(btn.getAttribute("data-remaining") || "60", 10);
+    if (rem < shortestRemaining && rem > 0) shortestRemaining = rem;
+    hasHeldSeats = true;
+  });
+
+  if (hasHeldSeats) {
+    let timeLeft = shortestRemaining;
+    const display = document.getElementById("countdown-display");
+    const interval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        if (display) display.textContent = "00:00 - Expired";
+        alert("Your 1-minute seat hold has expired. Please select your seats again.");
+        window.location.reload();
+      } else {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        if (display) {
+          display.textContent = (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs);
+        }
+      }
+    }, 1000);
+  }
+});
+</script>
+{% endblock %}

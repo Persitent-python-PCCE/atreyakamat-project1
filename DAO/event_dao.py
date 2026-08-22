@@ -2,14 +2,12 @@
 #
 # EventDAO — Data Access Object for the `events` table.
 # An event is a scheduled show/occasion that customers can book.
-#
-# This DAO has a few extra retrieval methods (upcoming, by category, search)
-# because those are common lookups for the events listing page.
 
 from datetime import datetime
 
 from app import db
 from models.event import Event
+from models.category import Category
 
 
 class EventDAO:
@@ -36,16 +34,11 @@ class EventDAO:
         return Event.query.all()
 
     def get_upcoming_events(self) -> list[Event]:
-        """Return events whose event_date is in the future.
-
-        We compare against the current UTC datetime. .filter() lets us write
-        a column-against-expression condition (unlike filter_by which is
-        only equality). We order by event_date so the soonest ones come first.
-        """
+        """Return events whose event_date is in the future or today."""
         now = datetime.utcnow()
         return (
             Event.query
-            .filter(Event.event_date >= now)
+            .filter(Event.event_date >= now.date())
             .order_by(Event.event_date.asc())
             .all()
         )
@@ -54,16 +47,32 @@ class EventDAO:
         """Return all events that belong to a given category id."""
         return Event.query.filter_by(category_id=category_id).all()
 
-    def search_events(self, search_term: str) -> list[Event]:
-        """Return events whose title contains the search term.
-
-        .ilike(...) is a case-insensitive LIKE in SQLAlchemy.
-        The % wildcards mean "any characters before/after the search term".
-        """
-        if not search_term:
+    def get_events_by_category_name(self, category_name: str) -> list[Event]:
+        """Return all events that belong to a category name (e.g. 'Music', 'Dining')."""
+        if not category_name or not category_name.strip():
             return []
-        pattern = f"%{search_term}%"
-        return Event.query.filter(Event.title.ilike(pattern)).all()
+        return (
+            Event.query
+            .join(Event.category)
+            .filter(Category.name.ilike(category_name.strip()))
+            .all()
+        )
+
+    def search_events(self, search_term: str) -> list[Event]:
+        """Return events whose title, description, or category matches the search term."""
+        if not search_term or not search_term.strip():
+            return []
+        pattern = f"%{search_term.strip()}%"
+        return (
+            Event.query
+            .outerjoin(Event.category)
+            .filter(
+                Event.title.ilike(pattern) |
+                Event.description.ilike(pattern) |
+                Category.name.ilike(pattern)
+            )
+            .all()
+        )
 
     # ---------------- UPDATE ----------------
     def update_event(self, event: Event) -> Event:

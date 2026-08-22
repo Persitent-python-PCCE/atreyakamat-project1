@@ -1,6 +1,6 @@
 # Controller/web_admin_controller.py
 #
-# WebAdminController — handles Admin Dashboard and Management pages.
+# WebAdminController — handles Admin Dashboard and Event CRUD management.
 #
 # Routes:
 #   GET /admin/dashboard
@@ -55,16 +55,16 @@ def admin_dashboard():
     if err_resp:
         return err_resp
 
-    users = user_service.get_all_users().get("data", [])
     events = event_service.get_all_events().get("data", [])
+    upcoming = event_service.get_upcoming_events().get("data", [])
     venues = venue_service.get_all_venues().get("data", [])
     categories = category_service.get_all_categories().get("data", [])
 
     stats = {
-        "total_users": len(users),
         "total_events": len(events),
-        "total_venues": len(venues),
+        "upcoming_events": len(upcoming),
         "total_categories": len(categories),
+        "total_venues": len(venues),
     }
 
     return render_template("admin/dashboard.html", stats=stats, recent_events=events[:5])
@@ -78,7 +78,7 @@ def admin_events():
         return err_resp
 
     events = event_service.get_all_events().get("data", [])
-    return render_template("admin/events.html", events=events)
+    return render_template("admin/events/index.html", events=events)
 
 
 @web_admin_bp.route("/events/create", methods=["GET", "POST"])
@@ -93,13 +93,17 @@ def create_event():
     venues = venue_service.get_all_venues().get("data", [])
 
     if request.method == "POST":
-        title = request.form.get("title")
+        title = request.form.get("title", "").strip()
         category_id = request.form.get("category_id")
         venue_id = request.form.get("venue_id")
         event_date = request.form.get("event_date")
         start_time = request.form.get("start_time")
         end_time = request.form.get("end_time") or None
-        description = request.form.get("description")
+        description = request.form.get("description", "").strip()
+        poster = request.form.get("poster", "").strip() or None
+        booking_open = request.form.get("booking_open") == "1" or request.form.get("booking_open") == "true" or request.form.get("booking_open") == "on"
+        requires_seats = request.form.get("requires_seats") == "1" or request.form.get("requires_seats") == "true" or request.form.get("requires_seats") == "on"
+        status = request.form.get("status", "published")
         base_price = request.form.get("base_price") or 0.0
 
         data = {
@@ -111,8 +115,11 @@ def create_event():
             "start_time": start_time,
             "end_time": end_time,
             "description": description,
+            "poster": poster,
+            "booking_open": booking_open,
+            "requires_seats": requires_seats,
+            "status": status,
             "base_price": float(base_price),
-            "status": "published",
         }
 
         res = event_service.create_event(data)
@@ -122,7 +129,7 @@ def create_event():
             error = res.get("message")
 
     return render_template(
-        "admin/create_event.html",
+        "admin/events/create.html",
         categories=categories,
         venues=venues,
         error=error,
@@ -147,13 +154,16 @@ def edit_event(event_id):
 
     if request.method == "POST":
         data = {
-            "title": request.form.get("title"),
+            "title": request.form.get("title", "").strip(),
             "category_id": int(request.form.get("category_id")),
             "venue_id": int(request.form.get("venue_id")),
             "event_date": request.form.get("event_date"),
             "start_time": request.form.get("start_time"),
             "end_time": request.form.get("end_time") or None,
-            "description": request.form.get("description"),
+            "description": request.form.get("description", "").strip(),
+            "poster": request.form.get("poster", "").strip() or None,
+            "booking_open": request.form.get("booking_open") in ["1", "true", "on"],
+            "requires_seats": request.form.get("requires_seats") in ["1", "true", "on"],
             "base_price": float(request.form.get("base_price") or 0.0),
             "status": request.form.get("status", "published"),
         }
@@ -165,7 +175,7 @@ def edit_event(event_id):
             error = res.get("message")
 
     return render_template(
-        "admin/edit_event.html",
+        "admin/events/edit.html",
         event=event,
         categories=categories,
         venues=venues,
@@ -175,7 +185,7 @@ def edit_event(event_id):
 
 @web_admin_bp.route("/events/<int:event_id>/delete", methods=["POST"])
 def delete_event(event_id):
-    """Delete an event."""
+    """Delete an event via POST."""
     admin_user, err_resp = _require_admin()
     if err_resp:
         return err_resp
