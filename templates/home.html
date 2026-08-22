@@ -1,52 +1,55 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border text-center">
-  <div class="container-fluid py-4">
-    <h1 class="display-4 fw-bold text-dark mb-3">Welcome to <span class="text-danger">SeatMeUp</span></h1>
-    <p class="col-md-8 fs-5 text-muted mx-auto mb-4">
+<!-- Hero Section with SeatMeUp Branding -->
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">Your Seat. Your Event. Your Moment.</p>
+    <h1>Smart Event Ticket Booking &amp; Management Platform</h1>
+    <p>
       Discover concerts, theatre, sports, and live shows. Pick your favorite seats, book in seconds, and enjoy unforgettable experiences.
     </p>
-    <div class="d-flex justify-content-center gap-3">
-      <a href="/events" class="btn btn-danger btn-lg px-4 fw-bold">Explore Events</a>
+    <div class="actions">
+      <a class="btn btn-primary" href="/events">Explore Events</a>
       {% if not current_user %}
-        <a href="/register" class="btn btn-outline-dark btn-lg px-4">Create Free Account</a>
+        <a class="btn btn-secondary" href="/register">Create Account</a>
+      {% else %}
+        <a class="btn btn-secondary" href="/dashboard">My Dashboard</a>
       {% endif %}
     </div>
   </div>
-</div>
+</section>
 
 <!-- Featured / Upcoming Events Section -->
-<div class="my-5">
+<section class="my-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="h3 fw-bold text-dark mb-0">Upcoming Events</h2>
-    <a href="/events" class="text-decoration-none fw-semibold text-danger">View All Events &rarr;</a>
+    <h2 class="h3 fw-bold" style="color: var(--burgundy); margin: 0;">Upcoming Events</h2>
+    <a href="/events" class="fw-bold text-decoration-none" style="color: var(--primary);">View All Events &rarr;</a>
   </div>
 
   {% if events and events|length > 0 %}
     <div class="row row-cols-1 row-cols-md-3 g-4">
       {% for event in events %}
         <div class="col">
-          <div class="card h-100 shadow-sm border-0 bg-white">
+          <div class="card h-100 shadow-sm border-0 d-flex flex-column">
             {% if event.poster %}
-              <img src="{{ event.poster }}" class="card-img-top" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
+              <img src="{{ event.poster }}" class="card-img-top rounded mb-3" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
             {% else %}
-              <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 180px;">
-                <span class="fs-4">🎭 Event</span>
+              <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center mb-3" style="height: 180px; background: var(--burgundy) !important;">
+                <span class="fs-3">🎭</span>
               </div>
             {% endif %}
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title fw-bold text-dark">{{ event.title }}</h5>
-              <p class="card-text text-muted small mb-2">
+            <div class="d-flex flex-column flex-grow-1">
+              <h4 class="fw-bold mb-1" style="color: var(--burgundy);">{{ event.title }}</h4>
+              <p class="text-muted small mb-2">
                 📅 {{ event.event_date }} {% if event.start_time %}• ⏰ {{ event.start_time }}{% endif %}
               </p>
-              <p class="card-text text-secondary mb-3 flex-grow-1">
-                {{ event.description|truncate(80) if event.description else 'Join us for this exciting live event.' }}
+              <p class="text-secondary small mb-3 flex-grow-1">
+                {{ event.description|truncate(85) if event.description else 'Join us for this exciting live event.' }}
               </p>
               <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                <span class="fs-5 fw-bold text-danger">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
-                <a href="/events/{{ event.id }}" class="btn btn-sm btn-outline-danger">View Details</a>
+                <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
+                <a href="/events/{{ event.id }}" class="btn btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">View Details</a>
               </div>
             </div>
           </div>
@@ -54,15 +57,31 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="card p-5 text-center bg-white shadow-sm border-0">
-      <h5 class="text-muted">No upcoming events found.</h5>
-      <p class="text-secondary small mb-3">Check back soon or explore our past archives.</p>
+    <div class="card p-5 text-center my-3">
+      <h4 class="text-muted mb-2">No upcoming events right now</h4>
+      <p class="text-secondary small mb-3">Check back soon for new concerts, workshops, and sports matches.</p>
       {% if current_user and current_user.role == 'admin' %}
         <div>
-          <a href="/admin/events/create" class="btn btn-sm btn-danger">+ Create First Event</a>
+          <a href="/admin/events/create" class="btn btn-primary btn-sm">+ Create First Event</a>
         </div>
       {% endif %}
     </div>
   {% endif %}
-</div>
+</section>
+
+<!-- Feature Pillars -->
+<section class="card-grid">
+  <article class="card feature">
+    <h3>Search &amp; Filters</h3>
+    <p class="text-muted small mb-0">Find events by title, venue, date, or category with a clean discovery flow.</p>
+  </article>
+  <article class="card feature">
+    <h3>Seat Selection</h3>
+    <p class="text-muted small mb-0">Select your preferred seats with live validation and temporary hold mechanisms.</p>
+  </article>
+  <article class="card feature">
+    <h3>Instant Ticketing</h3>
+    <p class="text-muted small mb-0">Receive secure digital tickets with verification tokens directly in your account.</p>
+  </article>
+</section>
 {% endblock %}

@@ -2,44 +2,44 @@
 
 {% block content %}
 <div class="my-4">
-  <nav aria-label="breadcrumb">
+  <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Home</a></li>
-      <li class="breadcrumb-item"><a href="/events" class="text-decoration-none text-muted">Events</a></li>
-      <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: var(--muted);">Home</a></li>
+      <li class="breadcrumb-item"><a href="/events" class="text-decoration-none" style="color: var(--muted);">Events</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">{{ event.title }}</li>
     </ol>
   </nav>
 
-  <div class="card shadow-sm border-0 bg-white overflow-hidden">
-    <div class="row g-0">
-      <div class="col-md-5 bg-dark text-white d-flex align-items-center justify-content-center p-3" style="min-height: 350px;">
+  <div class="card shadow-sm border-0 p-4">
+    <div class="row g-4">
+      <div class="col-md-5 d-flex align-items-center justify-content-center p-3 rounded" style="background: var(--burgundy); min-height: 320px;">
         {% if event.poster %}
-          <img src="{{ event.poster }}" class="img-fluid rounded shadow" alt="{{ event.title }}" style="max-height: 380px; object-fit: contain;">
+          <img src="{{ event.poster }}" class="img-fluid rounded shadow" alt="{{ event.title }}" style="max-height: 340px; object-fit: contain;">
         {% else %}
-          <div class="text-center p-5">
-            <div class="display-1 mb-2">🎭</div>
-            <h4>{{ event.title }}</h4>
+          <div class="text-center text-white p-4">
+            <div class="display-2 mb-2">🎭</div>
+            <h4 class="text-white">{{ event.title }}</h4>
           </div>
         {% endif %}
       </div>
-      <div class="col-md-7 p-4 p-md-5 d-flex flex-column">
+      <div class="col-md-7 d-flex flex-column">
         <div class="mb-2">
-          <span class="badge bg-danger">{{ category.name if category else 'Live Event' }}</span>
+          <span class="badge-smu">{{ category.name if category else 'Live Event' }}</span>
           {% if event.booking_open %}
-            <span class="badge bg-success">Booking Open</span>
+            <span class="badge bg-success ms-1">Booking Open</span>
           {% else %}
-            <span class="badge bg-secondary">Booking Closed</span>
+            <span class="badge bg-secondary ms-1">Booking Closed</span>
           {% endif %}
         </div>
 
-        <h1 class="fw-bold text-dark mb-3">{{ event.title }}</h1>
+        <h1 class="fw-bold mb-3" style="color: var(--burgundy);">{{ event.title }}</h1>
 
         <div class="row g-3 mb-4 text-muted">
           <div class="col-sm-6">
             <div class="d-flex align-items-center">
               <span class="fs-4 me-2">📅</span>
               <div>
-                <small class="text-uppercase fw-semibold d-block">Date</small>
+                <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Date</small>
                 <strong class="text-dark">{{ event.event_date }}</strong>
               </div>
             </div>
@@ -48,7 +48,7 @@
             <div class="d-flex align-items-center">
               <span class="fs-4 me-2">⏰</span>
               <div>
-                <small class="text-uppercase fw-semibold d-block">Time</small>
+                <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Time</small>
                 <strong class="text-dark">{{ event.start_time }} {% if event.end_time %}– {{ event.end_time }}{% endif %}</strong>
               </div>
             </div>
@@ -57,8 +57,8 @@
             <div class="d-flex align-items-center">
               <span class="fs-4 me-2">📍</span>
               <div>
-                <small class="text-uppercase fw-semibold d-block">Venue</small>
-                <strong class="text-dark">{{ venue.name if venue else 'Main Stage' }}</strong>
+                <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Venue</small>
+                <strong class="text-dark">{{ venue.name if venue else 'Main Venue' }}</strong>
                 {% if venue and venue.address %}
                   <span class="text-secondary small d-block">{{ venue.address }}, {{ venue.city or '' }}</span>
                 {% endif %}
@@ -68,22 +68,22 @@
         </div>
 
         <div class="mb-4">
-          <h5 class="fw-bold text-dark">About This Event</h5>
-          <p class="text-secondary leading-relaxed">
-            {{ event.description or 'No detailed description available for this event.' }}
+          <h5 class="fw-bold mb-2" style="color: var(--burgundy);">About This Event</h5>
+          <p class="text-secondary leading-relaxed small">
+            {{ event.description or 'No detailed description provided for this event.' }}
           </p>
         </div>
 
         <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
           <div>
             <span class="text-muted small d-block">Starting from</span>
-            <span class="fs-3 fw-bold text-danger">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
+            <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
           </div>
 
           {% if current_user %}
-            <a href="/events/{{ event.id }}/book" class="btn btn-danger btn-lg px-4 fw-bold">Book Now 🎟️</a>
+            <a href="/events/{{ event.id }}/book" class="btn btn-primary btn-lg px-4">Book Now 🎟️</a>
           {% else %}
-            <a href="/login" class="btn btn-danger btn-lg px-4 fw-bold">Login to Book 🎟️</a>
+            <a href="/login" class="btn btn-primary btn-lg px-4">Login to Book 🎟️</a>
           {% endif %}
         </div>
       </div>

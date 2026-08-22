@@ -121,6 +121,10 @@ def api_logout():
 def web_login():
     """Render and process the web login form."""
     error = None
+    success_msg = None
+    if request.args.get("registered"):
+        success_msg = "Account created successfully! Please log in."
+
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
@@ -139,7 +143,7 @@ def web_login():
             return response
         else:
             error = result.get("message")
-    return render_template("auth/login.html", error=error)
+    return render_template("auth/login.html", error=error, success_msg=success_msg)
 
 
 @web_auth_bp.route("/register", methods=["GET", "POST"])
@@ -153,7 +157,8 @@ def web_register():
         confirm_password = request.form.get("confirm_password", "")
         phone = request.form.get("phone", "").strip()
 
-        if password != confirm_password:
+        # Validate confirm_password if supplied in form
+        if confirm_password and password != confirm_password:
             error = "Passwords do not match"
             return render_template("auth/register.html", error=error)
 
@@ -164,9 +169,24 @@ def web_register():
             "phone": phone,
         })
         if result.get("success"):
-            return redirect(url_for("web_auth_bp.web_login"))
+            # Automatically establish login session for newly registered user and redirect to dashboard
+            login_result = auth_service.login(email, password)
+            if login_result.get("success"):
+                token = login_result["data"]["token"]
+                user_role = login_result["data"]["user"]["role"]
+                redirect_target = (
+                    url_for("web_admin_bp.admin_dashboard")
+                    if user_role == "admin"
+                    else url_for("web_customer_bp.customer_dashboard")
+                )
+                response = make_response(redirect(redirect_target))
+                set_access_cookies(response, token)
+                return response
+            return redirect(url_for("web_auth_bp.web_login", registered="true"))
         else:
             error = result.get("message")
+            if "already registered" in (error or "").lower():
+                error = "An account with this email already exists."
     return render_template("auth/register.html", error=error)
 
 
