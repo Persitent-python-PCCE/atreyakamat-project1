@@ -407,3 +407,50 @@ def verify_ticket_web(ticket_token):
             message=result.get("message", "Ticket verification failed"),
             status_code=status_code,
         ), status_code
+
+
+@web_event_bp.route("/bookings/<string:booking_reference>/ticket/pdf")
+@web_event_bp.route("/tickets/<string:ticket_token>/pdf")
+def download_ticket_pdf(booking_reference=None, ticket_token=None):
+    """Download official branded PDF Ticket."""
+    current_user = get_current_user_info()
+    if not current_user:
+        return redirect(url_for("web_auth_bp.web_login"))
+
+    import io
+    from flask import send_file
+    from Services.pdf_service import TicketPDFService
+    pdf_svc = TicketPDFService()
+
+    if booking_reference:
+        booking_res = booking_service.get_booking_by_reference(booking_reference)
+        if not booking_res.get("success"):
+            return render_template("error.html", message="Booking not found", status_code=404), 404
+        booking_data = booking_res["data"]
+        booking_id = booking_data["id"]
+    elif ticket_token:
+        from Services.ticket_service import TicketService
+        ticket_svc = TicketService()
+        ticket_res = ticket_svc.get_ticket_details_by_token(ticket_token)
+        if not ticket_res.get("success"):
+            return render_template("error.html", message="Ticket not found", status_code=404), 404
+        booking_id = ticket_res["data"]["booking_id"]
+        booking_data = ticket_res["data"]
+    else:
+        return render_template("error.html", message="Missing booking reference", status_code=400), 400
+
+    # RBAC Ownership check: customer must own the booking or be admin
+    if current_user["role"] != "admin" and booking_data.get("user_id") != current_user["id"]:
+        return render_template("error.html", message="You do not have permission to download this ticket", status_code=403), 403
+
+    pdf_bytes = pdf_svc.generate_ticket_pdf(booking_id)
+    if not pdf_bytes:
+        return render_template("error.html", message="Could not generate ticket PDF", status_code=500), 500
+
+    download_filename = f"SeatMeUp-Ticket-{booking_data.get('booking_reference', 'ticket')}.pdf"
+    return send_file(
+        io.BytesIO(pdf_bytes),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=download_filename,
+    )

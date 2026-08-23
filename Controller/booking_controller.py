@@ -76,6 +76,24 @@ def cancel_booking(booking_id):
     return jsonify(result), result.get("status", 200)
 
 
+@booking_bp.post("/bookings/<int:booking_id>/send-confirmation")
+@jwt_required()
+def send_booking_email(booking_id):
+    """Trigger sending or resending booking confirmation email (Owner or Admin only)."""
+    current_user_id = int(get_jwt_identity())
+    current_role = get_jwt().get("role", "customer")
+    is_admin = (current_role == "admin")
+
+    from Services.email_service import EmailService
+    email_svc = EmailService()
+    result = email_svc.resend_booking_confirmation(
+        booking_id=booking_id,
+        user_id=current_user_id,
+        is_admin=is_admin,
+    )
+    return jsonify(result), result.get("status", 200)
+
+
 @booking_bp.get("/bookings/my")
 @jwt_required()
 def get_my_bookings():

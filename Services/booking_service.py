@@ -477,6 +477,21 @@ class BookingService:
             db.session.rollback()
             return fail(f"Booking transaction failed: {str(e)}", 500)
 
+        # Step 6: Dispatch confirmation email via EmailService (failure does NOT invalidate booking)
+        email_sent = False
+        email_message = "Your booking is confirmed and your digital ticket has been generated."
+        try:
+            from Services.email_service import EmailService
+            email_svc = EmailService()
+            email_res = email_svc.send_booking_confirmation(booking.id)
+            if email_res.get("success"):
+                email_sent = True
+                email_message = "Your booking is confirmed and your digital ticket has been emailed to your registered address."
+            else:
+                email_message = "Your booking is confirmed, but email delivery could not be completed. You can download your ticket here."
+        except Exception:
+            email_message = "Your booking is confirmed. You can download your digital ticket directly."
+
         return ok(
             "Booking confirmed successfully",
             {
@@ -493,6 +508,8 @@ class BookingService:
                 "seats_count": len(held_seats) if event.requires_seats else ga_quantity,
                 "addons_count": len(addon_records_to_create),
                 "user_reward_balance": float(user.reward_balance),
+                "email_sent": email_sent,
+                "email_message": email_message,
             },
             status=201,
         )

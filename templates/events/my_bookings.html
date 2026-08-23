@@ -63,6 +63,7 @@
                   <div class="d-flex gap-1 align-items-center">
                     {% if b.status != 'cancelled' %}
                       <a href="/bookings/{{ b.booking_reference }}/ticket" class="btn btn-sm btn-primary" title="View &amp; Scan Ticket">🎟️ Ticket</a>
+                      <a href="/bookings/{{ b.booking_reference }}/ticket/pdf" class="btn btn-sm btn-outline-primary" title="Download PDF Ticket">📥 PDF</a>
                     {% endif %}
                     <a href="/bookings/{{ b.booking_reference }}" class="btn btn-sm btn-outline-secondary" title="View Receipt">Receipt</a>
                     

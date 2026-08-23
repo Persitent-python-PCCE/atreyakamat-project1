@@ -112,11 +112,16 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="d-flex justify-content-between align-items-center mt-4 d-print-none">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 d-print-none">
         <a href="/my-bookings" class="btn btn-secondary">&larr; Back to My Bookings</a>
-        <button type="button" class="btn btn-primary" onclick="window.print();">
-          🖨️ Print / Save Ticket
-        </button>
+        <div class="d-flex gap-2">
+          <a href="/bookings/{{ ticket.booking_reference }}/ticket/pdf" class="btn btn-outline-primary fw-semibold">
+            📥 Download PDF
+          </a>
+          <button type="button" class="btn btn-primary" onclick="window.print();">
+            🖨️ Print Ticket
+          </button>
+        </div>
       </div>
     </div>
   </div>

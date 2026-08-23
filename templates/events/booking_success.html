@@ -8,12 +8,25 @@
       <div class="card shadow-sm border-0 p-4 text-center mb-4" style="background: var(--surface);">
         <div class="display-3 mb-2">🎉</div>
         <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Booking Confirmed!</h2>
-        <p class="text-muted mb-3">Thank you for booking with SeatMeUp. Your seats are now officially reserved.</p>
+        <p class="text-muted mb-3">Thank you for booking with SeatMeUp. Your order has been officially processed.</p>
 
-        <div class="d-inline-block px-4 py-2 rounded shadow-sm mx-auto mb-2" style="background: var(--burgundy); color: #ffffff;">
+        <div class="d-inline-block px-4 py-2 rounded shadow-sm mx-auto mb-3" style="background: var(--burgundy); color: #ffffff;">
           <small class="text-white-50 d-block text-uppercase" style="letter-spacing: 0.1rem; font-size: 0.75rem;">Booking Reference</small>
           <strong class="fs-4 text-white" style="letter-spacing: 0.05rem;">{{ booking.booking_reference }}</strong>
         </div>
+
+        <!-- Email Delivery Notice -->
+        {% if booking.email_sent %}
+          <div class="alert alert-info py-2 small mb-0 d-inline-flex align-items-center gap-2 mx-auto" role="alert">
+            <span>📧</span>
+            <span>Your official digital ticket has been emailed to <strong>{{ user.email }}</strong>.</span>
+          </div>
+        {% else %}
+          <div class="alert alert-light border py-2 small mb-0 d-inline-flex align-items-center gap-2 mx-auto text-secondary" role="alert">
+            <span>ℹ️</span>
+            <span>Your booking is confirmed! You can view and download your PDF ticket directly below.</span>
+          </div>
+        {% endif %}
       </div>
 
       <!-- Booking Details Card -->
@@ -31,21 +44,29 @@
           </div>
         </div>
 
-        <!-- Seats Table -->
-        <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Reserved Seats</h5>
+        <!-- Seats / Items Table -->
+        <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Admission / Seats</h5>
         <div class="table-responsive mb-4">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Seat</th>
+                <th>Item / Seat</th>
+                <th>Quantity</th>
                 <th class="text-end">Price</th>
               </tr>
             </thead>
             <tbody>
               {% for it in booking['items'] %}
                 <tr>
-                  <td><strong>💺 Seat {{ it.seat_number }}</strong></td>
-                  <td class="text-end fw-semibold">${{ "%.2f"|format(it.unit_price) }}</td>
+                  <td>
+                    {% if it.seat_number and it.seat_number != 'General Admission' %}
+                      <strong>💺 Seat {{ it.seat_number }}</strong>
+                    {% else %}
+                      <strong>🎟️ General Admission Ticket</strong>
+                    {% endif %}
+                  </td>
+                  <td>{{ it.quantity or 1 }}</td>
+                  <td class="text-end fw-semibold">${{ "%.2f"|format(it.total_price) }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -79,10 +100,12 @@
 
         <!-- Pricing Breakdown -->
         <div class="p-3 rounded mb-4" style="background: var(--surface);">
-          <div class="d-flex justify-content-between text-muted small mb-1">
-            <span>Discount Applied</span>
-            <span class="text-success fw-bold">-${{ "%.2f"|format(booking.discount_amount or 0.0) }}</span>
-          </div>
+          {% if booking.discount_amount and booking.discount_amount > 0 %}
+            <div class="d-flex justify-content-between text-muted small mb-1">
+              <span>Discount Applied</span>
+              <span class="text-success fw-bold">-${{ "%.2f"|format(booking.discount_amount) }}</span>
+            </div>
+          {% endif %}
           <div class="d-flex justify-content-between text-dark fs-5 fw-bold mt-2 pt-2 border-top">
             <span>Total Paid</span>
             <span style="color: var(--primary);">${{ "%.2f"|format(booking.total_amount) }}</span>
@@ -100,10 +123,14 @@
 
         <!-- Action Links -->
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <a href="/events" class="btn btn-secondary">&larr; Explore More Events</a>
-          <div class="d-flex gap-2">
-            <a href="/my-bookings" class="btn btn-outline-secondary">My Bookings</a>
-            <a href="/bookings/{{ booking.booking_reference }}/ticket" class="btn btn-primary fw-bold">🎟️ View Digital Ticket &rarr;</a>
+          <a href="/my-bookings" class="btn btn-outline-secondary">&larr; My Bookings</a>
+          <div class="d-flex flex-wrap gap-2">
+            <a href="/bookings/{{ booking.booking_reference }}/ticket/pdf" class="btn btn-outline-primary fw-semibold">
+              📥 Download PDF Ticket
+            </a>
+            <a href="/bookings/{{ booking.booking_reference }}/ticket" class="btn btn-primary fw-bold">
+              🎟️ View Digital Ticket &rarr;
+            </a>
           </div>
         </div>
       </div>
