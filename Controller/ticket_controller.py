@@ -1,39 +1,47 @@
 # Controller/ticket_controller.py
 #
-# TicketController — handles HTTP requests for ticket retrieval and verification.
-#
-# Flow:
-#     HTTP Request -> TicketController -> TicketService -> TicketDAO / TicketVerificationDAO -> MySQL
+# TicketController — handles HTTP REST API requests for tickets and verification scans.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from Services.ticket_service import TicketService
-from Controller.auth_guards import role_required
 
 ticket_bp = Blueprint("ticket_bp", __name__)
 ticket_service = TicketService()
 
 
 @ticket_bp.get("/tickets/<string:token>")
+@ticket_bp.get("/tickets/token/<string:token>")
 def get_ticket_by_token(token):
-    """Get ticket by unique ticket token."""
-    result = ticket_service.get_ticket_by_token(token)
+    """Get rich ticket details by unique ticket token."""
+    result = ticket_service.get_ticket_details_by_token(token)
     return jsonify(result), result.get("status", 200)
 
 
 @ticket_bp.get("/bookings/<int:booking_id>/ticket")
-@jwt_required()
 def get_ticket_for_booking(booking_id):
     """Get ticket associated with a specific booking."""
     result = ticket_service.get_ticket_by_booking(booking_id)
     return jsonify(result), result.get("status", 200)
 
 
+@ticket_bp.post("/tickets/verify")
 @ticket_bp.post("/tickets/<string:token>/verify")
-@jwt_required()
-@role_required("admin")
-def verify_ticket(token):
-    """Record a ticket verification attempt (Admin / Scanner only)."""
+def verify_ticket(token=None):
+    """Verify and validate a ticket token (marks as used on success)."""
     data = request.get_json(silent=True) or {}
-    result = ticket_service.verify_ticket(token, data)
+    token_to_verify = token or data.get("ticket_token")
+    mark_used = data.get("mark_as_used", True)
+
+    if not token_to_verify:
+        return jsonify({"success": False, "message": "ticket_token is required"}), 400
+
+    result = ticket_service.validate_and_verify_ticket(token_to_verify, mark_as_used=mark_used)
+    return jsonify(result), result.get("status", 200)
+
+
+@ticket_bp.get("/tickets/<int:ticket_id>/verifications")
+def get_ticket_verifications(ticket_id):
+    """Get verification scan history for a ticket."""
+    result = ticket_service.get_ticket_verifications(ticket_id)
     return jsonify(result), result.get("status", 200)

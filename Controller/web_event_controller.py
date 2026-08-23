@@ -282,3 +282,79 @@ def my_bookings():
         bookings=bookings,
         user=current_user,
     )
+
+
+# ---------------------------------------------------------------- #
+# TICKET VIEW & QR CODE VERIFICATION ROUTES
+# ---------------------------------------------------------------- #
+@web_event_bp.route("/tickets/<string:ticket_token>")
+def view_ticket(ticket_token):
+    """Customer-facing View Ticket page with QR Code."""
+    current_user = get_current_user_info()
+    if not current_user:
+        return redirect(url_for("web_auth_bp.web_login", next=f"/tickets/{ticket_token}"))
+
+    from Services.ticket_service import TicketService
+    ticket_svc = TicketService()
+    res = ticket_svc.get_ticket_details_by_token(ticket_token)
+    if not res.get("success"):
+        return render_template("error.html", message="Ticket not found", status_code=404), 404
+
+    ticket_data = res["data"]
+    # Check ownership
+    booking_res = booking_service.get_booking_by_id(ticket_data["booking_id"])
+    if booking_res.get("success"):
+        b_data = booking_res["data"]
+        if current_user["role"] != "admin" and b_data.get("user_id") != current_user["id"]:
+            return render_template("error.html", message="You do not have permission to view this ticket", status_code=403), 403
+
+    return render_template(
+        "tickets/view.html",
+        ticket=ticket_data,
+        user=current_user,
+    )
+
+
+@web_event_bp.route("/bookings/<string:booking_reference>/ticket")
+def view_ticket_by_booking(booking_reference):
+    """Redirect to ticket view from booking reference."""
+    booking_res = booking_service.get_booking_by_reference(booking_reference)
+    if not booking_res.get("success"):
+        return render_template("error.html", message="Booking not found", status_code=404), 404
+
+    b_data = booking_res["data"]
+    token = b_data.get("ticket_token")
+    if not token:
+        # Generate ticket if not already generated
+        from Services.ticket_service import TicketService
+        ticket_svc = TicketService()
+        t_res = ticket_svc.create_ticket_for_booking(b_data["id"])
+        if t_res.get("success"):
+            token = t_res["data"]["ticket_token"]
+        else:
+            return render_template("error.html", message="Ticket could not be generated", status_code=500), 500
+
+    return redirect(url_for("web_event_bp.view_ticket", ticket_token=token))
+
+
+@web_event_bp.route("/verify/<string:ticket_token>")
+def verify_ticket_web(ticket_token):
+    """Door scanner verification route for ticket tokens."""
+    from Services.ticket_service import TicketService
+    ticket_svc = TicketService()
+    result = ticket_svc.validate_and_verify_ticket(ticket_token, mark_as_used=True)
+
+    if result.get("success"):
+        # Success: Show clear Ticket Verified Successfully page
+        return render_template(
+            "tickets/verified.html",
+            verification=result["data"],
+        )
+    else:
+        # Failure: Redirect/Render existing common failure page with error message
+        status_code = result.get("status", 400)
+        return render_template(
+            "error.html",
+            message=result.get("message", "Ticket verification failed"),
+            status_code=status_code,
+        ), status_code

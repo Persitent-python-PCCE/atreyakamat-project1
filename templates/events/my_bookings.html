@@ -42,7 +42,10 @@
                   </span>
                 </td>
                 <td>
-                  <a href="/bookings/{{ b.booking_reference }}" class="btn btn-sm btn-outline-primary">View</a>
+                  <div class="d-flex gap-1">
+                    <a href="/bookings/{{ b.booking_reference }}/ticket" class="btn btn-sm btn-primary" title="View & Scan Ticket">🎟️ Ticket</a>
+                    <a href="/bookings/{{ b.booking_reference }}" class="btn btn-sm btn-outline-secondary" title="View Receipt">Receipt</a>
+                  </div>
                 </td>
               </tr>
             {% endfor %}

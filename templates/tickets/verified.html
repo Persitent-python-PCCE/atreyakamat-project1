@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0 p-0 overflow-hidden" style="border-radius: 16px; border: 2px solid #28a745;">
+        <!-- Verified Success Header Strip -->
+        <div class="p-4 text-white text-center" style="background: #28a745;">
+          <div class="display-3 mb-1">✅</div>
+          <h2 class="fw-bold mb-1 text-white">Ticket Verified Successfully</h2>
+          <p class="mb-0 text-white-50 fs-6">Admission Granted • Database Record Created</p>
+        </div>
+
+        <!-- Verification Summary Body -->
+        <div class="p-4 bg-white">
+          <div class="alert alert-success d-flex align-items-center justify-content-between py-2 mb-4" role="alert">
+            <span class="small">Scan Status: <strong>VALID</strong></span>
+            <span class="badge bg-success">Status: Marked as USED</span>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Attendee</small>
+              <strong class="fs-5 text-dark">{{ verification.customer_name }}</strong>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Booking Reference</small>
+              <strong class="fs-5 text-dark">{{ verification.booking_reference }}</strong>
+            </div>
+            <div class="col-sm-12">
+              <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Event</small>
+              <strong class="text-dark fs-5">{{ verification.event_title }}</strong>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Event Date &amp; Time</small>
+              <span class="text-dark">📅 {{ verification.event_date }} • ⏰ {{ verification.start_time }}</span>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Venue</small>
+              <span class="text-dark">📍 {{ verification.venue_name }}</span>
+            </div>
+          </div>
+
+          <!-- Reserved Seats (if any) -->
+          {% if verification.seats and verification.seats|length > 0 %}
+            <div class="p-3 rounded mb-4" style="background: var(--surface); border: 1px dashed var(--primary);">
+              <small class="text-muted text-uppercase d-block fw-bold mb-1" style="font-size: 0.75rem;">Allocated Seats</small>
+              <div class="d-flex flex-wrap gap-2">
+                {% for s in verification.seats %}
+                  <span class="badge bg-white text-dark border px-2 py-1 fs-6">💺 Seat {{ s }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="p-3 rounded bg-light border text-muted small mb-4">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Verified At:</span>
+              <strong class="text-dark">{{ verification.verified_at }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Token:</span>
+              <code>{{ verification.ticket_token }}</code>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-between">
+            <a href="/" class="btn btn-secondary">&larr; Return Home</a>
+            <a href="/tickets/{{ verification.ticket_token }}" class="btn btn-outline-primary">View Full Ticket &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

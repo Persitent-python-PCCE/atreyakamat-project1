@@ -23,12 +23,14 @@ from DAO import (
     PromoCodeUsageDAO,
     RewardTransactionDAO,
     UserDAO,
+    TicketDAO,
 )
 from models.booking import Booking
 from models.booking_item import BookingItem
 from models.booking_addon import BookingAddon
 from models.promo_code_usage import PromoCodeUsage
 from models.reward_transaction import RewardTransaction
+from models.ticket import Ticket
 from api.serializers import booking_to_dict
 from Services._result import ok, fail
 from Services.promo_service import PromoCodeService
@@ -53,6 +55,7 @@ class BookingService:
         self.promo_usage_dao = PromoCodeUsageDAO()
         self.reward_dao = RewardTransactionDAO()
         self.user_dao = UserDAO()
+        self.ticket_dao = TicketDAO()
         self.promo_service = PromoCodeService()
 
     # ---------------------------------------------------------------- #
@@ -361,6 +364,18 @@ class BookingService:
                 hold.status = "consumed"
                 db.session.add(hold)
 
+            # 5g. Create unique Ticket for this confirmed booking
+            ticket_token = "TKT-" + uuid.uuid4().hex[:16].upper()
+            qr_data = f"/verify/{ticket_token}"
+            ticket = Ticket(
+                booking_id=booking.id,
+                ticket_token=ticket_token,
+                ticket_status="valid",
+                qr_data=qr_data,
+                issued_at=datetime.utcnow(),
+            )
+            db.session.add(ticket)
+
             # Commit the entire transaction atomically!
             db.session.commit()
 
@@ -373,6 +388,7 @@ class BookingService:
             {
                 "booking_id": booking.id,
                 "booking_reference": booking.booking_reference,
+                "ticket_token": ticket.ticket_token,
                 "event_id": event.id,
                 "event_title": event.title,
                 "total_amount": float(booking.total_amount),
@@ -438,6 +454,11 @@ class BookingService:
         data["seat_items"] = item_details
         data["addons"] = addon_details
 
+        # Attach ticket_token if ticket exists
+        t = self.ticket_dao.get_ticket_by_booking(b.id)
+        data["ticket_token"] = t.ticket_token if t else None
+        data["ticket_status"] = t.ticket_status if t else None
+
         return ok("Booking retrieved", data)
 
     def get_user_bookings(self, user_id: int) -> dict:
@@ -448,6 +469,9 @@ class BookingService:
             ev = self.event_dao.get_event_by_id(b.event_id)
             d["event_title"] = ev.title if ev else "Event"
             d["event_date"] = str(ev.event_date) if ev else ""
+            t = self.ticket_dao.get_ticket_by_booking(b.id)
+            d["ticket_token"] = t.ticket_token if t else None
+            d["ticket_status"] = t.ticket_status if t else None
             result.append(d)
         return ok("User bookings retrieved", result)
 

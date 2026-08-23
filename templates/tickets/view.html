@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3 d-print-none">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: var(--muted);">Home</a></li>
+      <li class="breadcrumb-item"><a href="/my-bookings" class="text-decoration-none" style="color: var(--muted);">My Bookings</a></li>
+      <li class="breadcrumb-item active text-dark" aria-current="page">View Ticket</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Ticket Container (Digital Pass) -->
+      <div class="card shadow-sm border-0 p-0 overflow-hidden" style="border-radius: 16px; border: 1px solid var(--border);">
+        <!-- Top Header Strip (SeatMeUp Burgundy) -->
+        <div class="p-4 text-white d-flex justify-content-between align-items-center" style="background: var(--burgundy);">
+          <div>
+            <span class="badge mb-1 text-uppercase" style="background: var(--primary); letter-spacing: 0.05rem;">Official Digital Ticket</span>
+            <h3 class="fw-bold mb-0 text-white">{{ ticket.event_title }}</h3>
+          </div>
+          <div class="text-end">
+            <span class="badge {% if ticket.ticket_status == 'valid' %}bg-success{% elif ticket.ticket_status == 'used' %}bg-secondary{% else %}bg-danger{% endif %} text-uppercase fs-6 px-3 py-2">
+              {{ ticket.ticket_status }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Ticket Body -->
+        <div class="p-4 bg-white">
+          <div class="row g-4 align-items-center">
+            <!-- Left Info Column -->
+            <div class="col-md-7">
+              <div class="mb-3">
+                <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Date &amp; Time</small>
+                <strong class="text-dark fs-5">📅 {{ ticket.event_date }} • ⏰ {{ ticket.start_time }}</strong>
+              </div>
+
+              <div class="mb-3">
+                <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Venue &amp; Location</small>
+                <strong class="text-dark d-block">📍 {{ ticket.venue_name }}</strong>
+                {% if ticket.venue_address %}
+                  <span class="text-secondary small">{{ ticket.venue_address }}{% if ticket.venue_city %}, {{ ticket.venue_city }}{% endif %}</span>
+                {% endif %}
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Attendee</small>
+                  <strong class="text-dark">{{ ticket.customer_name }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Booking Ref</small>
+                  <strong class="text-dark">{{ ticket.booking_reference }}</strong>
+                </div>
+              </div>
+
+              <!-- Reserved Seats List -->
+              {% if ticket.seats and ticket.seats|length > 0 %}
+                <div class="p-3 rounded mb-3" style="background: var(--surface); border: 1px dashed var(--primary);">
+                  <small class="text-muted text-uppercase d-block fw-bold mb-1" style="font-size: 0.75rem;">Reserved Seats</small>
+                  <div class="d-flex flex-wrap gap-2">
+                    {% for s in ticket.seats %}
+                      <span class="badge bg-white text-dark border px-2 py-1 fs-6">💺 Seat {{ s }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
+
+              <!-- Add-ons (if any) -->
+              {% if ticket.addons and ticket.addons|length > 0 %}
+                <div class="mb-3">
+                  <small class="text-muted text-uppercase d-block fw-semibold" style="font-size: 0.75rem;">Add-ons</small>
+                  <ul class="list-unstyled mb-0 small text-secondary">
+                    {% for ad in ticket.addons %}
+                      <li>• {{ ad.name }} (Qty: {{ ad.quantity }})</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+
+              <div class="text-muted small">
+                <small>Ticket Token: <code class="text-dark">{{ ticket.ticket_token }}</code></small>
+              </div>
+            </div>
+
+            <!-- Right QR Code Column -->
+            <div class="col-md-5 text-center d-flex flex-column align-items-center justify-content-center p-3 rounded" style="background: var(--surface); border: 1px solid var(--border);">
+              <p class="fw-bold mb-2 small" style="color: var(--burgundy);">Scan for Entry</p>
+              
+              <!-- Container where QRCode.js renders the visual QR -->
+              <div id="qrcode-container" class="p-2 bg-white rounded shadow-sm mb-2" style="display: inline-block;"></div>
+
+              <small class="text-muted d-block text-center" style="font-size: 0.75rem; max-width: 200px;">
+                Show this QR at the venue entrance. Unique token: <code>{{ ticket.ticket_token[:12] }}...</code>
+              </small>
+
+              <!-- Verification Link Shortcut (For testing / staff preview) -->
+              <a href="/verify/{{ ticket.ticket_token }}" class="btn btn-outline-secondary btn-sm mt-3 d-print-none" style="font-size: 0.75rem;" target="_blank">
+                🔍 Test Door Scan
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ticket Footer Strip -->
+        <div class="p-3 bg-light text-center border-top small text-muted">
+          <span>Issued on {{ ticket.issued_at[:10] if ticket.issued_at else '' }} • Present this digital ticket on your phone or print at the entrance.</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex justify-content-between align-items-center mt-4 d-print-none">
+        <a href="/my-bookings" class="btn btn-secondary">&larr; Back to My Bookings</a>
+        <button type="button" class="btn btn-primary" onclick="window.print();">
+          🖨️ Print / Save Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightweight QR Code Rendering Script via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const qrData = "{{ request.host_url.rstrip('/') }}{{ ticket.qr_data }}";
+  const container = document.getElementById("qrcode-container");
+  if (container && typeof QRCode !== "undefined") {
+    new QRCode(container, {
+      text: qrData,
+      width: 140,
+      height: 140,
+      colorDark: "#490E13",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+});
+</script>
+{% endblock %}
