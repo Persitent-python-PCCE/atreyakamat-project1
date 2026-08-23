@@ -33,8 +33,8 @@ class Event(BaseModel):
     venue = db.relationship("Venue", back_populates="events")
     creator = db.relationship("User", back_populates="created_events")
 
-    event_addons = db.relationship("EventAddon", back_populates="event")
-    seat_holds = db.relationship("SeatHold", back_populates="event")
-    bookings = db.relationship("Booking", back_populates="event")
-    event_reschedules = db.relationship("EventReschedule", back_populates="event")
-    uploaded_files = db.relationship("UploadedFile", back_populates="event")
+    event_addons = db.relationship("EventAddon", back_populates="event", cascade="all, delete-orphan")
+    seat_holds = db.relationship("SeatHold", back_populates="event", cascade="all, delete-orphan")
+    bookings = db.relationship("Booking", back_populates="event", cascade="all, delete-orphan")
+    event_reschedules = db.relationship("EventReschedule", back_populates="event", cascade="all, delete-orphan")
+    uploaded_files = db.relationship("UploadedFile", back_populates="event", cascade="all, delete-orphan")

@@ -1,13 +1,20 @@
 # Services/ticket_service.py
 #
-# Business logic for Tickets and QR Code Verification.
+# Business logic for Ticket Lifecycle and QR Code Verification.
 #
-# Flow:
-#   Controllers -> TicketService -> TicketDAO / TicketVerificationDAO / BookingDAO -> MySQL
+# Supported Ticket Statuses:
+#   - valid: Active ticket ready for event entry.
+#   - used: Successfully scanned/verified at venue entrance.
+#   - cancelled: Invalidated due to booking cancellation.
+#   - expired: Event date has passed.
+#
+# Architecture:
+#   Controller -> TicketService -> TicketDAO / TicketVerificationDAO / BookingDAO -> MySQL
 
 from datetime import datetime, date
 import uuid
 
+from app import db
 from DAO import (
     TicketDAO,
     TicketVerificationDAO,
@@ -95,16 +102,27 @@ class TicketService:
 
         user = self.user_dao.get_user_by_id(booking.user_id)
         event = self.event_dao.get_event_by_id(booking.event_id)
-        venue = self.venue_dao.get_venue_by_id(event.venue_id) if event else None
+        venue = self.venue_dao.get_venue_by_id(event.venue_id) if event and event.venue_id else None
 
-        # Seats
+        # Check for dynamic event expiry
+        if event and event.event_date < date.today() and ticket.ticket_status == "valid":
+            ticket.ticket_status = "expired"
+            ticket.expired_at = datetime.utcnow()
+            self.ticket_dao.update_ticket_status(ticket)
+
+        # Seats & GA quantity
         items = self.booking_item_dao.get_items_by_booking(booking.id)
         seat_numbers = []
+        ga_quantity = 0
+        is_seated = bool(event.requires_seats) if event else True
+
         for it in items:
             if it.seat_id:
                 s = self.seat_dao.get_seat_by_id(it.seat_id)
                 if s:
                     seat_numbers.append(s.seat_number)
+            else:
+                ga_quantity += (it.quantity or 1)
 
         # Add-ons
         b_addons = self.booking_addon_dao.get_addons_by_booking(booking.id)
@@ -137,7 +155,9 @@ class TicketService:
             "venue_name": venue.name if venue else "Main Venue",
             "venue_address": venue.address if venue else "",
             "venue_city": venue.city if venue else "",
+            "is_seated": is_seated,
             "seats": seat_numbers,
+            "quantity": ga_quantity if not is_seated else len(seat_numbers),
             "addons": addons_list,
         }
 
@@ -152,43 +172,43 @@ class TicketService:
 
     # ---------------- VERIFY TICKET (SCAN AT VENUE DOOR) ----------------
     def validate_and_verify_ticket(self, token: str, mark_as_used: bool = True) -> dict:
-        """Validate a ticket token against database rules and record the verification scan."""
+        """Validate a ticket token against database rules, event date, and record verification scan."""
         if not token or not token.strip():
-            return fail("Ticket token is required", 400)
+            return fail("Invalid ticket.", 400)
 
         cleaned_token = token.strip()
         ticket = self.ticket_dao.get_ticket_by_token(cleaned_token)
 
-        # 1. Check: Ticket exists
+        # 1. Rule: Ticket must exist in system
         if ticket is None:
-            return fail("Invalid ticket token: Ticket not found in system.", 404)
+            return fail("Invalid ticket.", 404)
 
-        # 2. Check: Associated Booking exists and is valid
+        # 2. Rule: Associated Booking must be valid/confirmed
         booking = self.booking_dao.get_booking_by_id(ticket.booking_id)
         if booking is None or booking.status == "cancelled":
-            # Record failed verification
+            # Record failed scan attempt
             verification = TicketVerification(
                 ticket_id=ticket.id,
-                verification_status="cancelled_booking",
+                verification_status="failed",
                 verified_at=datetime.utcnow(),
             )
             self.verification_dao.create_verification(verification)
             ticket.ticket_status = "cancelled"
             self.ticket_dao.update_ticket_status(ticket)
-            return fail("Ticket verification failed: The associated booking has been cancelled.", 400)
+            return fail("Ticket has been cancelled.", 400)
 
-        # 3. Check: Associated Event exists
+        # 3. Rule: Associated Event must exist
         event = self.event_dao.get_event_by_id(booking.event_id)
         if event is None:
             verification = TicketVerification(
                 ticket_id=ticket.id,
-                verification_status="event_not_found",
+                verification_status="failed",
                 verified_at=datetime.utcnow(),
             )
             self.verification_dao.create_verification(verification)
-            return fail("Ticket verification failed: Event not found.", 404)
+            return fail("Invalid ticket.", 404)
 
-        # 4. Check: Event date has not passed
+        # 4. Rule: Dynamic Event Expiry Check (uses current Event date, handling reschedules automatically)
         today = date.today()
         if event.event_date < today:
             ticket.ticket_status = "expired"
@@ -197,77 +217,92 @@ class TicketService:
 
             verification = TicketVerification(
                 ticket_id=ticket.id,
-                verification_status="expired_event",
+                verification_status="failed",
                 verified_at=datetime.utcnow(),
             )
             self.verification_dao.create_verification(verification)
-            return fail(
-                f"Ticket verification failed: The event date ({event.event_date}) has already passed.",
-                400,
-            )
+            return fail("Ticket has expired.", 400)
 
-        # 5. Check: Ticket has not already been used or invalidated
+        # 5. Rule: Double-Verification Protection (cannot verify a used ticket twice)
         if ticket.ticket_status == "used":
             verification = TicketVerification(
                 ticket_id=ticket.id,
-                verification_status="already_used",
+                verification_status="failed",
                 verified_at=datetime.utcnow(),
             )
             self.verification_dao.create_verification(verification)
-            used_time_str = str(ticket.used_at) if ticket.used_at else "earlier"
-            return fail(
-                f"Ticket verification failed: This ticket has already been used for entry at {used_time_str}.",
-                409,
-            )
+            return fail("Ticket has already been used.", 409)
 
-        if ticket.ticket_status in ["expired", "cancelled"]:
+        if ticket.ticket_status == "cancelled":
             verification = TicketVerification(
                 ticket_id=ticket.id,
-                verification_status=ticket.ticket_status,
+                verification_status="failed",
                 verified_at=datetime.utcnow(),
             )
             self.verification_dao.create_verification(verification)
-            return fail(f"Ticket verification failed: Ticket status is {ticket.ticket_status}.", 400)
+            return fail("Ticket has been cancelled.", 400)
 
-        # 6. Ticket is VALID! Mark as used if requested
-        if mark_as_used:
-            ticket.ticket_status = "used"
-            ticket.used_at = datetime.utcnow()
-            self.ticket_dao.update_ticket_status(ticket)
+        if ticket.ticket_status == "expired":
+            verification = TicketVerification(
+                ticket_id=ticket.id,
+                verification_status="failed",
+                verified_at=datetime.utcnow(),
+            )
+            self.verification_dao.create_verification(verification)
+            return fail("Ticket has expired.", 400)
 
-        # Record successful verification attempt
-        verification = TicketVerification(
-            ticket_id=ticket.id,
-            verification_status="valid",
-            verified_at=datetime.utcnow(),
-        )
-        self.verification_dao.create_verification(verification)
+        # 6. Ticket is VALID: Execute atomic update & record verification log
+        try:
+            if mark_as_used:
+                ticket.ticket_status = "used"
+                ticket.used_at = datetime.utcnow()
+                db.session.add(ticket)
+
+            verification = TicketVerification(
+                ticket_id=ticket.id,
+                verification_status="success",
+                verified_at=datetime.utcnow(),
+            )
+            db.session.add(verification)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return fail(f"Verification transaction failed: {str(e)}", 500)
 
         # Load rich details for response
         user = self.user_dao.get_user_by_id(booking.user_id)
-        venue = self.venue_dao.get_venue_by_id(event.venue_id)
+        venue = self.venue_dao.get_venue_by_id(event.venue_id) if event.venue_id else None
         items = self.booking_item_dao.get_items_by_booking(booking.id)
-        seats = [
-            self.seat_dao.get_seat_by_id(it.seat_id).seat_number
-            for it in items
-            if it.seat_id and self.seat_dao.get_seat_by_id(it.seat_id)
-        ]
+        
+        is_seated = bool(event.requires_seats)
+        seats = []
+        ga_quantity = 0
+        for it in items:
+            if it.seat_id:
+                s = self.seat_dao.get_seat_by_id(it.seat_id)
+                if s:
+                    seats.append(s.seat_number)
+            else:
+                ga_quantity += (it.quantity or 1)
 
         verification_payload = {
             "ticket_token": ticket.ticket_token,
-            "verification_status": "valid",
+            "verification_status": "success",
             "verified_at": verification.verified_at.isoformat(),
             "ticket_status": ticket.ticket_status,
             "booking_reference": booking.booking_reference,
             "customer_name": user.name if user else "Customer",
+            "customer_email": user.email if user else "",
             "event_title": event.title,
             "event_date": str(event.event_date),
             "start_time": str(event.start_time),
             "venue_name": venue.name if venue else "Main Venue",
+            "is_seated": is_seated,
             "seats": seats,
+            "quantity": ga_quantity if not is_seated else len(seats),
         }
 
-        return ok("Ticket verified successfully! Admission granted.", verification_payload, status=200)
+        return ok("Ticket verified successfully", verification_payload, status=200)
 
     def get_ticket_verifications(self, ticket_id: int) -> dict:
         """Get scan history audit trail for a ticket."""

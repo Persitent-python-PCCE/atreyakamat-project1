@@ -236,3 +236,97 @@ The SeatMeUp Team
                 return fail("You do not have permission to resend email for this booking", 403)
 
         return self.send_booking_confirmation(booking.id)
+
+    def send_reschedule_email(
+        self,
+        user_id: int,
+        booking_id: int,
+        event_title: str,
+        old_date_str: str,
+        old_time_str: str,
+        new_date_str: str,
+        new_time_str: str,
+        reason: str | None = None,
+    ) -> dict:
+        """Send an event rescheduling notification email to an affected customer."""
+        user = self.user_dao.get_user_by_id(user_id)
+        if not user or not user.email:
+            return fail("User not found or missing email", 404)
+
+        recipient_email = user.email.strip()
+        subject = f"SeatMeUp — Event Rescheduled: {event_title}"
+        email_type = "event_reschedule"
+
+        gmail_address, gmail_app_password, smtp_host, smtp_port = self._get_smtp_credentials()
+        if not gmail_address or not gmail_app_password:
+            log = EmailLog(
+                user_id=user_id,
+                booking_id=booking_id,
+                recipient_email=recipient_email,
+                subject=subject,
+                email_type=email_type,
+                status="failed",
+                error_message="Gmail credentials not configured in environment.",
+                created_at=datetime.utcnow(),
+            )
+            self.email_log_dao.create_log(log)
+            return fail("Gmail credentials not configured in environment.", 503)
+
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"SeatMeUp <{gmail_address}>"
+        msg["To"] = recipient_email
+        msg["Subject"] = subject
+
+        reason_text = f"Reason: {reason}\n" if reason else ""
+        text_content = f"""Hello {user.name},
+
+Please note that your upcoming event '{event_title}' has been rescheduled.
+
+Previous Date & Time: {old_date_str} at {old_time_str}
+New Date & Time: {new_date_str} at {new_time_str}
+{reason_text}
+Your existing tickets remain valid for the new date and do not need to be reissued.
+
+Thank you,
+The SeatMeUp Team
+"""
+        msg.attach(MIMEText(text_content, "plain"))
+
+        try:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+                server.starttls()
+                server.login(gmail_address, gmail_app_password)
+                server.sendmail(gmail_address, [recipient_email], msg.as_string())
+
+            sent_time = datetime.utcnow()
+            log = EmailLog(
+                user_id=user_id,
+                booking_id=booking_id,
+                recipient_email=recipient_email,
+                subject=subject,
+                email_type=email_type,
+                status="sent",
+                error_message=None,
+                sent_at=sent_time,
+                created_at=sent_time,
+            )
+            self.email_log_dao.create_log(log)
+            return ok("Reschedule email sent successfully.", {"email_log_id": log.id})
+        except Exception as e:
+            err_msg = str(e)
+            if gmail_app_password:
+                err_msg = err_msg.replace(gmail_app_password, "******")
+
+            log = EmailLog(
+                user_id=user_id,
+                booking_id=booking_id,
+                recipient_email=recipient_email,
+                subject=subject,
+                email_type=email_type,
+                status="failed",
+                error_message=f"SMTP Delivery failed: {err_msg[:400]}",
+                sent_at=None,
+                created_at=datetime.utcnow(),
+            )
+            self.email_log_dao.create_log(log)
+            return fail(f"Email delivery failed: {err_msg}", 500)

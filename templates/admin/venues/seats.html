@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row my-4">
+  <!-- Admin Sidebar -->
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
+      <div class="nav flex-column nav-pills">
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
+        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/venues" style="border-radius: 8px; color: var(--white) !important;">📍 Venues</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Venue Seats Main View -->
+  <div class="col-md-9">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold text-dark mb-1">💺 Seat Configuration: {{ venue.name }}</h2>
+        <p class="text-muted mb-0">
+          📍 {{ venue.address }}{% if venue.city %}, {{ venue.city }}{% endif %} • Capacity: <strong>{{ venue.capacity }}</strong>
+        </p>
+      </div>
+      <a href="/admin/venues" class="btn btn-secondary btn-sm">&larr; Back to Venues</a>
+    </div>
+
+    {% if success %}
+      <div class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert">
+        {{ success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+
+    <!-- Top Summary Card -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 p-3 bg-white text-center">
+          <span class="text-muted small fw-semibold text-uppercase">Configured Seats</span>
+          <h3 class="fw-bold mb-0 text-primary">{{ seats|length }}</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 p-3 bg-white text-center">
+          <span class="text-muted small fw-semibold text-uppercase">Venue Capacity</span>
+          <h3 class="fw-bold mb-0 text-dark">{{ venue.capacity }}</h3>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 p-3 bg-white text-center">
+          <span class="text-muted small fw-semibold text-uppercase">Venue Type</span>
+          <h3 class="fw-bold mb-0" style="color: var(--burgundy);">{{ venue.venue_type|title }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seat Setup Options -->
+    <div class="row g-4 mb-4">
+      <!-- 1. Bulk Seat Generator -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0 p-4 h-100 bg-white">
+          <h5 class="fw-bold mb-1" style="color: var(--burgundy);">⚡ Bulk Seat Generator</h5>
+          <p class="text-muted small mb-3">Quickly generate rows (A, B, C...) and seat columns.</p>
+
+          <form method="POST" action="/admin/venues/{{ venue.id }}/seats/generate">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Number of Rows (e.g. 5 = A to E)</label>
+                <input type="number" name="num_rows" min="1" max="26" class="form-control form-control-sm" value="5" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Seats Per Row (e.g. 10 = 1 to 10)</label>
+                <input type="number" name="seats_per_row" min="1" max="50" class="form-control form-control-sm" value="10" required>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Section Name</label>
+                <input type="text" name="section_name" class="form-control form-control-sm" value="Orchestra" placeholder="e.g. Orchestra">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Seat Price ($) <small class="text-muted">(0 = inherit event base price)</small></label>
+                <input type="number" step="0.01" min="0" name="price" class="form-control form-control-sm" value="0.00">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">Generate Seats Grid</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 2. Add Single Seat -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm border-0 p-4 h-100 bg-white">
+          <h5 class="fw-bold mb-1" style="color: var(--burgundy);">➕ Add Single Seat</h5>
+          <p class="text-muted small mb-3">Add individual VIP or custom seats.</p>
+
+          <form method="POST" action="/admin/venues/{{ venue.id }}/seats/create">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold">Seat Number *</label>
+              <input type="text" name="seat_number" class="form-control form-control-sm" placeholder="e.g. VIP-1, BOX-A" required>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Section</label>
+                <input type="text" name="section_name" class="form-control form-control-sm" value="VIP Box" placeholder="e.g. Balcony">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Price ($)</label>
+                <input type="number" step="0.01" min="0" name="price" class="form-control form-control-sm" value="0.00">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-outline-primary btn-sm w-100 fw-semibold mt-2">+ Add Single Seat</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Layout Preview & Seat List -->
+    <div class="card shadow-sm border-0 p-4 bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        <div>
+          <h5 class="fw-bold mb-0 text-dark">Configured Seats Map ({{ seats|length }})</h5>
+          <small class="text-muted">Seats currently available for events scheduled at this venue</small>
+        </div>
+        {% if seats and seats|length > 0 %}
+          <form method="POST" action="/admin/venues/{{ venue.id }}/seats/clear" onsubmit="return confirm('Clear all seats for this venue?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-outline-danger btn-sm">Clear All Seats</button>
+          </form>
+        {% endif %}
+      </div>
+
+      {% if seats and seats|length > 0 %}
+        <!-- Visual Badges Map -->
+        <div class="p-3 bg-light rounded text-center mb-4 border">
+          <div class="p-2 mb-3 text-white fw-bold small rounded" style="background: #2b2d42; letter-spacing: 2px;">
+            🎭 STAGE / SCREEN DIRECTION 🎭
+          </div>
+          <div class="d-flex flex-wrap justify-content-center gap-2" style="max-height: 240px; overflow-y: auto;">
+            {% for s in seats %}
+              <span class="badge bg-white text-dark border p-2 shadow-sm" style="font-size: 0.85rem;">
+                {{ s.seat_number }}
+                {% if s.price and s.price > 0 %}
+                  <small class="text-success d-block">${{ "%.2f"|format(s.price) }}</small>
+                {% else %}
+                  <small class="text-muted d-block">{{ s.section_name or 'General' }}</small>
+                {% endif %}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Seats Table -->
+        <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+          <table class="table table-hover table-sm align-middle mb-0">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>ID</th>
+                <th>Seat Number</th>
+                <th>Section</th>
+                <th>Price Override</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in seats %}
+                <tr>
+                  <td>#{{ s.id }}</td>
+                  <td><strong>{{ s.seat_number }}</strong></td>
+                  <td><span class="badge bg-light text-dark border">{{ s.section_name or 'General' }}</span></td>
+                  <td>
+                    {% if s.price and s.price > 0 %}
+                      ${{ "%.2f"|format(s.price) }}
+                    {% else %}
+                      <span class="text-muted">Inherits Event Price</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge bg-success">Active</span>
+                  </td>
+                  <td class="text-end">
+                    <form method="POST" action="/admin/venues/{{ venue.id }}/seats/{{ s.id }}/delete" class="d-inline" onsubmit="return confirm('Delete seat {{ s.seat_number }}?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <div class="display-4 text-muted mb-2">💺</div>
+          <h5 class="fw-bold text-dark">No Seats Configured Yet</h5>
+          <p class="text-muted small mb-3">
+            Events at this venue will show "No seats configured" until seats are generated.
+          </p>
+          <p class="text-muted small">
+            Use the <strong>Bulk Seat Generator</strong> above to add initial rows (e.g. Rows A–E, 10 seats per row = 50 seats).
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

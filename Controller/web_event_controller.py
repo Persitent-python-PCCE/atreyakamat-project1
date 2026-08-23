@@ -387,6 +387,7 @@ def view_ticket_by_booking(booking_reference):
 
 
 @web_event_bp.route("/verify/<string:ticket_token>")
+@web_event_bp.route("/verification/<string:ticket_token>")
 def verify_ticket_web(ticket_token):
     """Door scanner verification route for ticket tokens."""
     from Services.ticket_service import TicketService
@@ -394,17 +395,17 @@ def verify_ticket_web(ticket_token):
     result = ticket_svc.validate_and_verify_ticket(ticket_token, mark_as_used=True)
 
     if result.get("success"):
-        # Success: Show clear Ticket Verified Successfully page
+        # Success: Show clear Ticket Verified page
         return render_template(
             "tickets/verified.html",
             verification=result["data"],
         )
     else:
-        # Failure: Redirect/Render existing common failure page with error message
+        # Failure: Render common verification failure page with exact reason
         status_code = result.get("status", 400)
         return render_template(
-            "error.html",
-            message=result.get("message", "Ticket verification failed"),
+            "tickets/failure.html",
+            message=result.get("message", "Invalid ticket."),
             status_code=status_code,
         ), status_code
 

@@ -338,3 +338,76 @@ class SeatService:
         except Exception:
             return fail("Could not delete seat", 500)
         return ok("Seat deleted")
+
+    def generate_seats_grid(
+        self,
+        venue_id: int,
+        num_rows: int = 5,
+        seats_per_row: int = 10,
+        section_name: str = "Orchestra",
+        seat_type: str = "standard",
+        price: float = 0.00,
+    ) -> dict:
+        """Generate a grid of seats (e.g. Rows A-E, 1-10) for a venue."""
+        venue = self.venue_dao.get_venue_by_id(venue_id)
+        if venue is None:
+            return fail("Venue not found", 404)
+
+        if num_rows < 1 or num_rows > 26:
+            return fail("Number of rows must be between 1 and 26", 400)
+        if seats_per_row < 1 or seats_per_row > 100:
+            return fail("Seats per row must be between 1 and 100", 400)
+
+        existing_seats = self.seat_dao.get_seats_by_venue(venue_id)
+        existing_numbers = {s.seat_number for s in existing_seats}
+
+        import string
+        row_letters = string.ascii_uppercase[:num_rows]
+
+        new_seats = []
+        for row in row_letters:
+            for num in range(1, seats_per_row + 1):
+                seat_num = f"{row}-{num}"
+                if seat_num not in existing_numbers:
+                    new_seats.append(
+                        Seat(
+                            venue_id=venue_id,
+                            seat_number=seat_num,
+                            section_name=section_name or "General",
+                            seat_type=seat_type or "standard",
+                            price=float(price or 0.0),
+                            is_active=True,
+                        )
+                    )
+
+        if not new_seats:
+            return ok("No new seats needed to be generated (all already exist)", {"created_count": 0})
+
+        try:
+            from app import db
+            db.session.add_all(new_seats)
+            db.session.commit()
+        except Exception:
+            return fail("Could not generate seats in database", 500)
+
+        return ok(f"Successfully generated {len(new_seats)} seats for {venue.name}", {"created_count": len(new_seats)}, status=201)
+
+    def clear_venue_seats(self, venue_id: int) -> dict:
+        """Clear all seats for a venue."""
+        venue = self.venue_dao.get_venue_by_id(venue_id)
+        if venue is None:
+            return fail("Venue not found", 404)
+
+        existing_seats = self.seat_dao.get_seats_by_venue(venue_id)
+        if not existing_seats:
+            return ok("Venue already has no seats")
+
+        try:
+            from app import db
+            for seat in existing_seats:
+                db.session.delete(seat)
+            db.session.commit()
+        except Exception:
+            return fail("Could not clear venue seats. Some seats may be referenced by active bookings.", 400)
+
+        return ok("All seats for this venue have been cleared.")

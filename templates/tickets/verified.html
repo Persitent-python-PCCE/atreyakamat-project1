@@ -8,15 +8,15 @@
         <!-- Verified Success Header Strip -->
         <div class="p-4 text-white text-center" style="background: #28a745;">
           <div class="display-3 mb-1">✅</div>
-          <h2 class="fw-bold mb-1 text-white">Ticket Verified Successfully</h2>
-          <p class="mb-0 text-white-50 fs-6">Admission Granted • Database Record Created</p>
+          <h2 class="fw-bold mb-1 text-white">Ticket Verified</h2>
+          <p class="mb-0 text-white fs-5 fw-semibold" style="letter-spacing: 0.05rem;">Entry Approved</p>
         </div>
 
         <!-- Verification Summary Body -->
         <div class="p-4 bg-white">
           <div class="alert alert-success d-flex align-items-center justify-content-between py-2 mb-4" role="alert">
             <span class="small">Scan Status: <strong>VALID</strong></span>
-            <span class="badge bg-success">Status: Marked as USED</span>
+            <span class="badge bg-success">Status: USED (Admission Approved)</span>
           </div>
 
           <div class="row g-3 mb-4">
@@ -42,8 +42,8 @@
             </div>
           </div>
 
-          <!-- Reserved Seats (if any) -->
-          {% if verification.seats and verification.seats|length > 0 %}
+          <!-- Admission Details: Seats (if seated) vs Quantity (if General Admission) -->
+          {% if verification.is_seated and verification.seats and verification.seats|length > 0 %}
             <div class="p-3 rounded mb-4" style="background: var(--surface); border: 1px dashed var(--primary);">
               <small class="text-muted text-uppercase d-block fw-bold mb-1" style="font-size: 0.75rem;">Allocated Seats</small>
               <div class="d-flex flex-wrap gap-2">
@@ -51,6 +51,11 @@
                   <span class="badge bg-white text-dark border px-2 py-1 fs-6">💺 Seat {{ s }}</span>
                 {% endfor %}
               </div>
+            </div>
+          {% else %}
+            <div class="p-3 rounded mb-4" style="background: var(--surface); border: 1px dashed #28a745;">
+              <small class="text-muted text-uppercase d-block fw-bold mb-1" style="font-size: 0.75rem;">General Admission</small>
+              <span class="badge bg-white text-dark border px-3 py-2 fs-6">🎟️ Quantity: {{ verification.quantity or 1 }} Ticket(s)</span>
             </div>
           {% endif %}
 

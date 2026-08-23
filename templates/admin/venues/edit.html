@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row my-4">
+  <!-- Admin Sidebar -->
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
+      <div class="nav flex-column nav-pills">
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
+        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/venues" style="border-radius: 8px; color: var(--white) !important;">📍 Venues</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Venue Form -->
+  <div class="col-md-9">
+    <div class="card shadow-sm border-0 p-4">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Edit Venue #{{ venue.id }}</h3>
+        <a href="/admin/venues" class="btn btn-secondary btn-sm">&larr; Back to Venues</a>
+      </div>
+
+      {% if error %}
+        <div class="alert alert-danger py-2 small mb-3" role="alert">
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="POST" action="/admin/venues/{{ venue.id }}/edit">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <!-- Venue Name -->
+        <div class="mb-3">
+          <label for="name" class="form-label fw-semibold">Venue Name *</label>
+          <input type="text" class="form-control" id="name" name="name" required placeholder="e.g. SeatMeUp Arena" value="{{ request.form.get('name', venue.name) if request.form else venue.name }}">
+        </div>
+
+        <!-- Address -->
+        <div class="mb-3">
+          <label for="address" class="form-label fw-semibold">Address *</label>
+          <input type="text" class="form-control" id="address" name="address" required placeholder="e.g. 123 Demo Road" value="{{ request.form.get('address', venue.address) if request.form else venue.address }}">
+        </div>
+
+        <!-- City & State -->
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3 mb-md-0">
+            <label for="city" class="form-label fw-semibold">City</label>
+            <input type="text" class="form-control" id="city" name="city" placeholder="e.g. Panaji" value="{{ request.form.get('city', venue.city or '') if request.form else (venue.city or '') }}">
+          </div>
+          <div class="col-md-6">
+            <label for="state" class="form-label fw-semibold">State / Region</label>
+            <input type="text" class="form-control" id="state" name="state" placeholder="e.g. Goa" value="{{ request.form.get('state', venue.state or '') if request.form else (venue.state or '') }}">
+          </div>
+        </div>
+
+        <!-- Capacity & Venue Type -->
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3 mb-md-0">
+            <label for="capacity" class="form-label fw-semibold">Capacity (Total seats / entries) *</label>
+            <input type="number" min="0" class="form-control" id="capacity" name="capacity" required value="{{ request.form.get('capacity', venue.capacity) if request.form else venue.capacity }}">
+          </div>
+          <div class="col-md-6">
+            <label for="venue_type" class="form-label fw-semibold">Venue Type *</label>
+            <select class="form-select" id="venue_type" name="venue_type">
+              <option value="seated" {% if (request.form and request.form.get('venue_type') == 'seated') or (not request.form and venue.venue_type == 'seated') %}selected{% endif %}>Seated (Fixed seat numbers and rows)</option>
+              <option value="general" {% if (request.form and request.form.get('venue_type') == 'general') or (not request.form and venue.venue_type == 'general') %}selected{% endif %}>General Admission (Open standing / unreserved)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-2 border-top">
+          <a href="/admin/venues" class="btn btn-secondary px-4">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4">Update Venue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -29,6 +29,7 @@ from .notification_dao import NotificationDAO
 from .event_reschedule_dao import EventRescheduleDAO
 from .uploaded_file_dao import UploadedFileDAO
 from .email_log_dao import EmailLogDAO
+from .analytics_dao import AnalyticsDAO
 
 __all__ = [
     "UserDAO",
@@ -50,4 +51,5 @@ __all__ = [
     "EventRescheduleDAO",
     "UploadedFileDAO",
     "EmailLogDAO",
+    "AnalyticsDAO",
 ]

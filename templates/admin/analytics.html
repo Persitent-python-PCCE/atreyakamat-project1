@@ -4,34 +4,232 @@
 <div class="row my-4">
   <!-- Admin Sidebar -->
   <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 bg-white p-3">
-      <h5 class="fw-bold text-dark px-3 py-2 mb-2 border-bottom">Admin Menu</h5>
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
       <div class="nav flex-column nav-pills">
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
-        <a class="nav-link active bg-danger text-white mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
+        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/analytics" style="border-radius: 8px; color: var(--white) !important;">📈 Analytics</a>
       </div>
     </div>
   </div>
 
+  <!-- Analytics Main Dashboard Area -->
   <div class="col-md-9">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Header with Date Filters -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
       <div>
-        <h2 class="fw-bold text-dark mb-1">Analytics</h2>
-        <p class="text-muted mb-0">Platform performance & revenue metrics</p>
+        <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Platform Analytics</h2>
+        <p class="text-muted mb-0">Real-time revenue, ticketing, and performance metrics</p>
+      </div>
+      
+      <!-- Date Filters -->
+      <div class="btn-group shadow-sm" role="group" aria-label="Date Range Filter">
+        <a href="/admin/analytics" class="btn btn-sm {% if not filter_days %}btn-primary text-white{% else %}btn-outline-secondary{% endif %}">
+          All Time
+        </a>
+        <a href="/admin/analytics?days=30" class="btn btn-sm {% if filter_days == 30 %}btn-primary text-white{% else %}btn-outline-secondary{% endif %}">
+          Last 30 Days
+        </a>
+        <a href="/admin/analytics?days=7" class="btn btn-sm {% if filter_days == 7 %}btn-primary text-white{% else %}btn-outline-secondary{% endif %}">
+          Last 7 Days
+        </a>
       </div>
     </div>
 
-    <div class="card shadow-sm border-0 bg-white p-5 text-center">
-      <div class="display-3 mb-3 text-secondary">📊</div>
-      <h4 class="text-dark fw-bold">Analytics module coming soon</h4>
-      <p class="text-muted col-md-6 mx-auto mb-0">
-        Advanced financial metrics, ticket velocity graphs, and sales conversions will be enabled in an upcoming release.
-      </p>
+    <!-- 6 Primary Summary Metric Cards -->
+    <div class="row g-3 mb-4">
+      <!-- 1. Total Revenue -->
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid var(--primary) !important;">
+          <span class="text-muted small text-uppercase fw-semibold">Total Revenue</span>
+          <h2 class="fw-bold my-2" style="color: var(--primary);">${{ "%.2f"|format(summary.total_revenue or 0.0) }}</h2>
+          <span class="small text-muted">Avg Order Value: <strong>${{ "%.2f"|format(summary.average_booking_value or 0.0) }}</strong></span>
+        </div>
+      </div>
+
+      <!-- 2. Tickets Sold -->
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid #28a745 !important;">
+          <span class="text-muted small text-uppercase fw-semibold">Tickets Sold</span>
+          <h2 class="fw-bold my-2 text-dark">{{ summary.tickets_sold or 0 }}</h2>
+          <span class="small text-muted">Across all confirmed orders</span>
+        </div>
+      </div>
+
+      <!-- 3. Total Bookings -->
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid var(--burgundy) !important;">
+          <span class="text-muted small text-uppercase fw-semibold">Total Bookings</span>
+          <h2 class="fw-bold my-2" style="color: var(--burgundy);">{{ summary.total_bookings or 0 }}</h2>
+          <span class="small text-muted">Confirmed ({{ summary.cancelled_bookings or 0 }} cancelled)</span>
+        </div>
+      </div>
+
+      <!-- 4. Total Events -->
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 p-3 h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Total Events</span>
+          <h3 class="fw-bold my-2" style="color: var(--burgundy);">{{ summary.total_events or 0 }}</h3>
+          <span class="small text-muted">All catalogued events</span>
+        </div>
+      </div>
+
+      <!-- 5. Active / Upcoming Events -->
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 p-3 h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Active &amp; Upcoming</span>
+          <h3 class="fw-bold my-2 text-success">{{ summary.active_events or 0 }}</h3>
+          <span class="small text-muted">Published for booking</span>
+        </div>
+      </div>
+
+      <!-- 6. Cashback Disbursed -->
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 p-3 h-100">
+          <span class="text-muted small text-uppercase fw-semibold">2% Cashback Given</span>
+          <h3 class="fw-bold my-2 text-success">+${{ "%.2f"|format(summary.cashback_given or 0.0) }}</h3>
+          <span class="small text-muted">User wallet rewards</span>
+        </div>
+      </div>
     </div>
+
+    <!-- Top Selling Events Section -->
+    <div class="card shadow-sm border-0 p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="fw-bold mb-0" style="color: var(--burgundy);">Top Selling Events</h5>
+          <small class="text-muted">Ranked by gross revenue &amp; ticket volume</small>
+        </div>
+      </div>
+
+      {% if top_events and top_events|length > 0 %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Event</th>
+                <th>Category</th>
+                <th>Venue</th>
+                <th class="text-center">Tickets Sold</th>
+                <th class="text-center">Bookings</th>
+                <th class="text-center">Occupancy</th>
+                <th class="text-end">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ev in top_events %}
+                <tr>
+                  <td>
+                    <strong>{{ ev.title }}</strong>
+                    <small class="text-muted d-block">{{ ev.event_date }}</small>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">{{ ev.category_name }}</span></td>
+                  <td class="text-muted small">{{ ev.venue_name }}</td>
+                  <td class="text-center fw-bold">{{ ev.tickets_sold }}</td>
+                  <td class="text-center">{{ ev.bookings_count }}</td>
+                  <td class="text-center">
+                    {% if ev.venue_capacity > 0 %}
+                      <div class="d-flex align-items-center justify-content-center gap-1">
+                        <div class="progress flex-grow-1" style="height: 6px; min-width: 50px;">
+                          <div class="progress-bar bg-success" role="progressbar" style="width: {{ [ev.occupancy_rate, 100]|min }}%;"></div>
+                        </div>
+                        <small class="fw-semibold">{{ ev.occupancy_rate }}%</small>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end fw-bold" style="color: var(--primary);">${{ "%.2f"|format(ev.revenue) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-4 text-muted">
+          <p class="mb-0">No event sales recorded yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Category Performance Section -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-12">
+        <div class="card shadow-sm border-0 p-4 h-100">
+          <h5 class="fw-bold mb-1" style="color: var(--burgundy);">Category Performance</h5>
+          <small class="text-muted mb-3 d-block">Revenue &amp; ticket distributions across event genres</small>
+
+          {% if revenue_by_category and revenue_by_category|length > 0 %}
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Category</th>
+                    <th class="text-center">Confirmed Bookings</th>
+                    <th class="text-center">Tickets Sold</th>
+                    <th class="text-end">Total Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for cat in revenue_by_category %}
+                    <tr>
+                      <td><strong>{{ cat.name }}</strong></td>
+                      <td class="text-center">{{ cat.bookings_count }}</td>
+                      <td class="text-center fw-bold">{{ cat.tickets_sold }}</td>
+                      <td class="text-end fw-bold" style="color: var(--primary);">${{ "%.2f"|format(cat.revenue) }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-4 text-muted">
+              <p class="mb-0">No category sales recorded.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales Trend Over Time -->
+    <div class="card shadow-sm border-0 p-4">
+      <h5 class="fw-bold mb-1" style="color: var(--burgundy);">Sales Activity (Recent Daily Breakdown)</h5>
+      <small class="text-muted mb-3 d-block">Daily transaction volume and revenue progression</small>
+
+      {% if sales_over_time and sales_over_time|length > 0 %}
+        <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>Date</th>
+                <th class="text-center">Bookings</th>
+                <th class="text-center">Tickets</th>
+                <th class="text-end">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day in sales_over_time|reverse %}
+                {% if day.bookings > 0 %}
+                  <tr>
+                    <td><strong>{{ day.date }}</strong> ({{ day.display_date }})</td>
+                    <td class="text-center">{{ day.bookings }}</td>
+                    <td class="text-center fw-bold">{{ day.tickets }}</td>
+                    <td class="text-end fw-bold" style="color: var(--primary);">${{ "%.2f"|format(day.revenue) }}</td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted text-center py-3 mb-0">No daily transactions logged yet.</p>
+      {% endif %}
+    </div>
+
   </div>
 </div>
 {% endblock %}

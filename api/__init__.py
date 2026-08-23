@@ -2,26 +2,6 @@
 #
 # This package holds the REST API (Controller) layer for SeatMeUp.
 # It is built with Flask Blueprints — one file per resource.
-#
-# Each blueprint file (e.g. user_routes.py) defines HTTP routes that:
-#   - receive JSON via request.get_json()
-#   - call the matching Service (which in turn calls the DAO)
-#   - return a consistent JSON response:
-#         {"success": ..., "message": ..., "data": ...}
-#
-# Why the blueprint imports are deferred into register_blueprints():
-#   A Service module imports `from api.serializers import xxx_to_dict`.
-#   Importing any submodule of `api` runs api/__init__.py first. If
-#   api/__init__.py eagerly imported the blueprint modules at the top,
-#   that would trigger the Service import, which would trigger api again
-#   — a circular import. By deferring the blueprint imports until
-#   register_blueprints() is actually called (inside create_app, AFTER the
-#   app and `db` exist and the Service package is fully loaded), we break
-#   the cycle cleanly. This matches the same pattern used in app.py.
-#
-# `api.serializers` is the only submodule that other packages (Services,
-# tests) import directly. It is intentional that it has no dependencies on
-# the blueprint modules.
 
 from .serializers import ok, err  # noqa: F401  (re-exported for convenience)
 
@@ -40,22 +20,24 @@ ALL_BLUEPRINT_SPECS = [
     ("Controller.ticket_controller:ticket_bp", "/api"),
     ("Controller.notification_controller:notification_bp", "/api"),
     ("Controller.promo_controller:promo_bp", "/api/promos"),
+    ("Controller.admin_analytics_controller:admin_analytics_bp", "/api/admin"),
 ]
 
 
-def register_blueprints(app):
-    """Register every API blueprint on the given Flask app.
-
-    app.py calls this once inside create_app(). Blueprint objects are
-    imported HERE (lazily), after the app and `db` already exist, so that
-    there is no chance of a circular import while modules are still loading.
-    """
+def register_blueprints(app, csrf=None):
+    """Register every API blueprint on the given Flask app and exempt REST APIs from CSRF."""
     from importlib import import_module
 
     for dotted_path, url_prefix in ALL_BLUEPRINT_SPECS:
         module_name, attr_name = dotted_path.rsplit(":", 1)
         module = import_module(module_name)
         blueprint = getattr(module, attr_name)
+
+        # Exempt REST API blueprints from HTML form CSRF token requirement
+        # (web_auth_bp remains protected by CSRF)
+        if csrf is not None and attr_name != "web_auth_bp":
+            csrf.exempt(blueprint)
+
         app.register_blueprint(blueprint, url_prefix=url_prefix)
 
 

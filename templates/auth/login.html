@@ -24,6 +24,7 @@
   {% endif %}
 
   <form method="POST" action="/login">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div>
       <label for="email">Email Address</label>
       <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com" required value="{{ request.form.get('email', '') if request.form else '' }}">

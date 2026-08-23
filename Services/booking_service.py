@@ -444,7 +444,7 @@ class BookingService:
                 reward_tx = RewardTransaction(
                     user_id=user_id,
                     booking_id=booking.id,
-                    transaction_type="cashback_credit",
+                    transaction_type="cashback",
                     amount=cashback_amount,
                     description=f"2% Cashback reward for booking {booking_ref}",
                     created_at=datetime.utcnow(),
@@ -631,7 +631,7 @@ class BookingService:
                 reversal_tx = RewardTransaction(
                     user_id=booking.user_id,
                     booking_id=booking.id,
-                    transaction_type="cashback_reversal",
+                    transaction_type="adjustment",
                     amount=-cb_val,
                     description=f"Cashback reversed due to cancellation of booking {booking.booking_reference}",
                     created_at=datetime.utcnow(),

@@ -25,7 +25,10 @@
           <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Edit Event #{{ event.id }}</h3>
           <p class="text-muted small mb-0">{{ event.title }}</p>
         </div>
-        <a href="/admin/events" class="btn btn-secondary btn-sm">&larr; Back to Events</a>
+        <div class="d-flex gap-2">
+          <a href="/admin/events/{{ event.id }}/reschedule" class="btn btn-warning btn-sm text-dark fw-semibold">📅 Reschedule Event</a>
+          <a href="/admin/events" class="btn btn-secondary btn-sm">&larr; Back to Events</a>
+        </div>
       </div>
 
       {% if error %}
@@ -35,6 +38,7 @@
       {% endif %}
 
       <form method="POST" action="/admin/events/{{ event.id }}/edit">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <!-- Title -->
         <div class="mb-3">
           <label for="title" class="form-label fw-semibold">Event Title *</label>

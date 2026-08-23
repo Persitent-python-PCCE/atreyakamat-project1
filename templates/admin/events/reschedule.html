@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row my-4">
+  <!-- Admin Sidebar -->
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
+      <div class="nav flex-column nav-pills">
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
+        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/events" style="border-radius: 8px; color: var(--white) !important;">🎭 Events</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
+        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reschedule Main Form Area -->
+  <div class="col-md-9">
+    <div class="card shadow-sm border-0 p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+          <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Reschedule Event</h3>
+          <p class="text-muted small mb-0">Event: <strong>{{ event.title }}</strong> (ID: #{{ event.id }})</p>
+        </div>
+        <a href="/admin/events" class="btn btn-secondary btn-sm">&larr; Back to Events</a>
+      </div>
+
+      <!-- Flash / Error Alerts -->
+      {% if error %}
+        <div class="alert alert-danger py-2 small mb-3" role="alert">
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <!-- Current Schedule Display -->
+      <div class="alert alert-light border p-3 mb-4">
+        <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size: 0.75rem;">Current Schedule</h6>
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <small class="text-muted d-block">Current Date</small>
+            <strong class="text-dark fs-6">{{ event.event_date }}</strong>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">Current Start Time</small>
+            <strong class="text-dark fs-6">{{ event.start_time }}</strong>
+          </div>
+          <div class="col-sm-4">
+            <small class="text-muted d-block">Current End Time</small>
+            <span class="text-dark">{{ event.end_time or 'None' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rescheduling Form -->
+      <form method="POST" action="/admin/events/{{ event.id }}/reschedule">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <h5 class="fw-bold mb-3" style="color: var(--burgundy);">New Schedule Information</h5>
+
+        <div class="row mb-3">
+          <div class="col-md-4 mb-3 mb-md-0">
+            <label for="new_event_date" class="form-label fw-semibold">New Event Date *</label>
+            <input type="date" class="form-control" id="new_event_date" name="new_event_date" required value="{{ request.form.get('new_event_date', '') if request.form else '' }}">
+          </div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <label for="new_start_time" class="form-label fw-semibold">New Start Time *</label>
+            <input type="time" class="form-control" id="new_start_time" name="new_start_time" required value="{{ request.form.get('new_start_time', '') if request.form else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label for="new_end_time" class="form-label fw-semibold">New End Time (Optional)</label>
+            <input type="time" class="form-control" id="new_end_time" name="new_end_time" value="{{ request.form.get('new_end_time', '') if request.form else '' }}">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="reason" class="form-label fw-semibold">Reason for Rescheduling</label>
+          <textarea class="form-control" id="reason" name="reason" rows="2" placeholder="e.g. Inclement weather conditions, artist request, venue renovation...">{{ request.form.get('reason', '') if request.form else '' }}</textarea>
+          <small class="text-muted">This reason will be included in the in-app notification sent to all ticket holders.</small>
+        </div>
+
+        <!-- Admin Password Confirmation -->
+        <div class="p-3 rounded mb-4" style="background: #fff8f7; border: 1px solid #fedcd7;">
+          <label for="password" class="form-label fw-bold text-danger">🔒 Confirm Admin Password *</label>
+          <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your admin account password to confirm reschedule">
+          <small class="text-muted">Security verification required before altering event dates and notifying customers.</small>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+          <a href="/admin/events" class="btn btn-secondary px-4">Cancel</a>
+          <button type="submit" class="btn btn-primary px-4">Confirm Reschedule</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Reschedule History Audit Trail Section -->
+    <div class="card shadow-sm border-0 p-4">
+      <h5 class="fw-bold mb-3" style="color: var(--burgundy);">Reschedule Audit History</h5>
+
+      {% if history and history|length > 0 %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Previous Schedule</th>
+                <th>New Schedule</th>
+                <th>Reason</th>
+                <th>Rescheduled By</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in history|reverse %}
+                <tr>
+                  <td class="text-muted small">
+                    {{ h.old_event_date }} • {{ h.old_start_time }}
+                  </td>
+                  <td>
+                    <strong class="text-dark">{{ h.new_event_date }} • {{ h.new_start_time }}</strong>
+                  </td>
+                  <td class="small">{{ h.reason }}</td>
+                  <td><span class="badge bg-light text-dark border">{{ h.admin_name }}</span></td>
+                  <td class="text-muted small">{{ h.rescheduled_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted small mb-0">No prior schedule changes recorded for this event.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

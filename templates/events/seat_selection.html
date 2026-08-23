@@ -237,11 +237,13 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!action || !seatId) return;
 
       const url = `/events/${eventId}/seats/${seatId}/${action}`;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || "";
       fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": csrfToken
         }
       })
       .then(res => res.json())

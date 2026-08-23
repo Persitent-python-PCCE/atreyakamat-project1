@@ -32,6 +32,7 @@
       {% endif %}
 
       <form method="POST" action="/admin/events/create">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <!-- Title -->
         <div class="mb-3">
           <label for="title" class="form-label fw-semibold">Event Title *</label>

@@ -6,3 +6,5 @@ cryptography==45.0.7
 python-dotenv==1.0.1
 reportlab>=4.0.0
 qrcode[pil]>=8.0
+flasgger>=0.9.7
+flask-wtf>=1.2.0

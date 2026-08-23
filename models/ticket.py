@@ -18,5 +18,5 @@ class Ticket(BaseModel):
 
     booking = db.relationship("Booking", back_populates="ticket")
     ticket_verifications = db.relationship(
-        "TicketVerification", back_populates="ticket"
+        "TicketVerification", back_populates="ticket", cascade="all, delete-orphan"
     )

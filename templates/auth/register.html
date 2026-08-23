@@ -18,6 +18,7 @@
   {% endif %}
 
   <form method="POST" action="/register">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <div>
       <label for="name">Full Name *</label>
       <input type="text" id="name" name="name" class="form-control" placeholder="Jane Doe" required value="{{ request.form.get('name', '') if request.form else '' }}">

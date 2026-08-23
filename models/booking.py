@@ -20,13 +20,13 @@ class Booking(BaseModel):
 
     user = db.relationship("User", back_populates="bookings")
     event = db.relationship("Event", back_populates="bookings")
-    booking_items = db.relationship("BookingItem", back_populates="booking")
-    booking_addons = db.relationship("BookingAddon", back_populates="booking")
-    ticket = db.relationship("Ticket", back_populates="booking", uselist=False)
+    booking_items = db.relationship("BookingItem", back_populates="booking", cascade="all, delete-orphan")
+    booking_addons = db.relationship("BookingAddon", back_populates="booking", cascade="all, delete-orphan")
+    ticket = db.relationship("Ticket", back_populates="booking", uselist=False, cascade="all, delete-orphan")
     promo_code_usage = db.relationship(
-        "PromoCodeUsage", back_populates="booking", uselist=False
+        "PromoCodeUsage", back_populates="booking", uselist=False, cascade="all, delete-orphan"
     )
     reward_transactions = db.relationship(
-        "RewardTransaction", back_populates="booking"
+        "RewardTransaction", back_populates="booking", cascade="all, delete-orphan"
     )
-    email_logs = db.relationship("EmailLog", back_populates="booking")
+    email_logs = db.relationship("EmailLog", back_populates="booking", cascade="all, delete-orphan")

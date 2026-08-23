@@ -216,6 +216,7 @@
 
         <!-- Confirm Booking Form -->
         <form method="POST" action="/events/{{ event.id }}/checkout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <input type="hidden" name="action" value="confirm_booking">
           {% if not event.requires_seats %}
             <input type="hidden" name="quantity" value="{{ quantity or 1 }}">

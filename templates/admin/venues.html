@@ -4,13 +4,13 @@
 <div class="row my-4">
   <!-- Admin Sidebar -->
   <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 bg-white p-3">
-      <h5 class="fw-bold text-dark px-3 py-2 mb-2 border-bottom">Admin Menu</h5>
+    <div class="card shadow-sm border-0 p-3">
+      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
       <div class="nav flex-column nav-pills">
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
-        <a class="nav-link active bg-danger text-white mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
+        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/venues" style="border-radius: 8px; color: var(--white) !important;">📍 Venues</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
         <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
       </div>
@@ -21,9 +21,24 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="fw-bold text-dark mb-1">Venues</h2>
-        <p class="text-muted mb-0">Configured event hosting venues</p>
+        <p class="text-muted mb-0">Configure and manage event hosting spaces</p>
       </div>
+      <a href="/admin/venues/create" class="btn btn-primary fw-semibold px-4">+ Add Venue</a>
     </div>
+
+    {% if success %}
+      <div class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert">
+        {{ success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="alert alert-danger alert-dismissible fade show py-2 small mb-3" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
 
     <div class="card shadow-sm border-0 bg-white p-4">
       {% if venues and venues|length > 0 %}
@@ -34,8 +49,10 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Address</th>
-                <th>City</th>
+                <th>City / State</th>
                 <th>Capacity</th>
+                <th>Type</th>
+                <th class="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -44,15 +61,33 @@
                   <td>#{{ v.id }}</td>
                   <td><strong>{{ v.name }}</strong></td>
                   <td class="text-muted">{{ v.address }}</td>
-                  <td class="text-muted">{{ v.city or '—' }}</td>
+                  <td class="text-muted">
+                    {{ v.city or '—' }}{% if v.state %}, {{ v.state }}{% endif %}
+                  </td>
                   <td class="fw-semibold">{{ v.capacity }}</td>
+                  <td>
+                    <span class="badge bg-light text-dark border">
+                      {{ v.venue_type|title if v.venue_type else 'Seated' }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <a href="/admin/venues/{{ v.id }}/seats" class="btn btn-sm btn-outline-primary me-1">💺 Configure Seats</a>
+                    <a href="/admin/venues/{{ v.id }}/edit" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                    <form method="POST" action="/admin/venues/{{ v.id }}/delete" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this venue?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       {% else %}
-        <p class="text-muted text-center my-3">No venues configured yet.</p>
+        <div class="text-center py-5">
+          <p class="text-muted mb-3">No venues configured yet.</p>
+          <a href="/admin/venues/create" class="btn btn-outline-primary btn-sm">+ Create First Venue</a>
+        </div>
       {% endif %}
     </div>
   </div>

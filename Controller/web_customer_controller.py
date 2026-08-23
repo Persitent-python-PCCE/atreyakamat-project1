@@ -50,18 +50,8 @@ def customer_dashboard():
 
 @web_customer_bp.route("/my-bookings")
 def my_bookings():
-    """Render the user's booking history."""
-    current_user = get_current_user_info()
-    if not current_user:
-        return redirect(url_for("web_auth_bp.web_login"))
-
-    bookings_res = booking_service.get_user_bookings(current_user["id"])
-    bookings = bookings_res.get("data", []) if bookings_res.get("success") else []
-
-    return render_template(
-        "customer/bookings.html",
-        bookings=bookings,
-    )
+    """Redirect to the unified My Bookings page."""
+    return redirect(url_for("web_event_bp.my_bookings"))
 
 
 @web_customer_bp.route("/profile")

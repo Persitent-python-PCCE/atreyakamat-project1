@@ -22,4 +22,4 @@ class Venue(BaseModel):
     )
 
     events = db.relationship("Event", back_populates="venue")
-    seats = db.relationship("Seat", back_populates="venue")
+    seats = db.relationship("Seat", back_populates="venue", cascade="all, delete-orphan")

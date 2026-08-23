@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 p-0 overflow-hidden" style="border-radius: 16px; border: 2px solid #dc3545;">
+        <!-- Header Banner -->
+        <div class="p-4 text-white text-center" style="background: #dc3545;">
+          <div class="display-3 mb-1">❌</div>
+          <h2 class="fw-bold mb-1 text-white">Verification Failed</h2>
+          <p class="mb-0 text-white-50 fs-6">Entry Denied • Invalid Admission</p>
+        </div>
+
+        <!-- Failure Body -->
+        <div class="p-4 bg-white text-center">
+          <div class="alert alert-danger py-3 mb-4" role="alert">
+            <h5 class="fw-bold mb-1">Reason:</h5>
+            <p class="mb-0 fs-5">{{ message or 'Invalid ticket.' }}</p>
+          </div>
+
+          <p class="text-muted small mb-4">
+            This digital pass cannot be accepted for event admission. If you believe this is an error, please contact the venue staff or verify your order under My Bookings.
+          </p>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-center gap-3">
+            <a href="/" class="btn btn-secondary px-4">&larr; Return Home</a>
+            <a href="/my-bookings" class="btn btn-outline-primary px-4">My Bookings</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

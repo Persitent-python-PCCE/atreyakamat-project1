@@ -19,6 +19,7 @@ from Services.event_service import EventService
 from Services.venue_service import VenueService
 from Services.category_service import CategoryService
 from Services.booking_service import BookingService
+from Services.seat_service import SeatService
 from Controller.auth_guards import get_current_user_info
 
 web_admin_bp = Blueprint("web_admin_bp", __name__, url_prefix="/admin")
@@ -27,6 +28,7 @@ event_service = EventService()
 venue_service = VenueService()
 category_service = CategoryService()
 booking_service = BookingService()
+seat_service = SeatService()
 
 
 def _require_admin():
@@ -55,12 +57,14 @@ def admin_dashboard():
     if err_resp:
         return err_resp
 
+    users = user_service.get_all_users().get("data", [])
     events = event_service.get_all_events().get("data", [])
     upcoming = event_service.get_upcoming_events().get("data", [])
     venues = venue_service.get_all_venues().get("data", [])
     categories = category_service.get_all_categories().get("data", [])
 
     stats = {
+        "total_users": len(users),
         "total_events": len(events),
         "upcoming_events": len(upcoming),
         "total_categories": len(categories),
@@ -183,6 +187,57 @@ def edit_event(event_id):
     )
 
 
+@web_admin_bp.route("/events/<int:event_id>/reschedule", methods=["GET", "POST"])
+def reschedule_event(event_id):
+    """Reschedule an existing event with admin password confirmation."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    from Services.event_reschedule_service import EventRescheduleService
+    reschedule_service = EventRescheduleService()
+
+    event_res = event_service.get_event_by_id(event_id)
+    if not event_res.get("success"):
+        return render_template("error.html", message="Event not found", status_code=404), 404
+
+    event = event_res.get("data", {})
+    history_res = reschedule_service.get_reschedule_history(event_id)
+    history = history_res.get("data", []) if history_res.get("success") else []
+    error = None
+
+    if request.method == "POST":
+        new_event_date = request.form.get("new_event_date", "").strip()
+        new_start_time = request.form.get("new_start_time", "").strip()
+        new_end_time = request.form.get("new_end_time", "").strip() or None
+        reason = request.form.get("reason", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not password:
+            error = "Admin password confirmation is required."
+        else:
+            result = reschedule_service.reschedule_event(
+                event_id=event_id,
+                admin_id=admin_user["id"],
+                password=password,
+                new_event_date=new_event_date,
+                new_start_time=new_start_time,
+                new_end_time=new_end_time,
+                reason=reason,
+            )
+            if result.get("success"):
+                return redirect(url_for("web_admin_bp.admin_events"))
+            else:
+                error = result.get("message", "Rescheduling failed.")
+
+    return render_template(
+        "admin/events/reschedule.html",
+        event=event,
+        history=history,
+        error=error,
+    )
+
+
 @web_admin_bp.route("/events/<int:event_id>/delete", methods=["POST"])
 def delete_event(event_id):
     """Delete an event via POST."""
@@ -213,7 +268,191 @@ def admin_venues():
         return err_resp
 
     venues = venue_service.get_all_venues().get("data", [])
-    return render_template("admin/venues.html", venues=venues)
+    error = request.args.get("error")
+    success = request.args.get("success")
+    return render_template("admin/venues.html", venues=venues, error=error, success=success)
+
+
+@web_admin_bp.route("/venues/create", methods=["GET", "POST"])
+def create_venue():
+    """Create a new venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    error = None
+    if request.method == "POST":
+        data = {
+            "name": request.form.get("name", "").strip(),
+            "address": request.form.get("address", "").strip(),
+            "city": request.form.get("city", "").strip(),
+            "state": request.form.get("state", "").strip(),
+            "capacity": request.form.get("capacity", "0"),
+            "venue_type": request.form.get("venue_type", "seated"),
+        }
+
+        res = venue_service.create_venue(data)
+        if res.get("success"):
+            venue_id = res.get("data", {}).get("id")
+            if request.form.get("generate_seats") == "1" or request.form.get("generate_default_seats") == "1":
+                num_rows = min(10, max(2, int(request.form.get("initial_rows", 5) or 5)))
+                seats_per_row = min(20, max(2, int(request.form.get("initial_seats_per_row", 10) or 10)))
+                seat_service.generate_seats_grid(venue_id, num_rows=num_rows, seats_per_row=seats_per_row)
+            return redirect(url_for("web_admin_bp.admin_venues", success="Venue created successfully"))
+        else:
+            error = res.get("message")
+
+    return render_template("admin/venues/create.html", error=error)
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/edit", methods=["GET", "POST"])
+def edit_venue(venue_id):
+    """Edit an existing venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    venue_res = venue_service.get_venue_by_id(venue_id)
+    if not venue_res.get("success"):
+        return render_template("error.html", message="Venue not found", status_code=404), 404
+
+    venue = venue_res.get("data", {})
+    error = None
+
+    if request.method == "POST":
+        data = {
+            "name": request.form.get("name", "").strip(),
+            "address": request.form.get("address", "").strip(),
+            "city": request.form.get("city", "").strip(),
+            "state": request.form.get("state", "").strip(),
+            "capacity": request.form.get("capacity", "0"),
+            "venue_type": request.form.get("venue_type", "seated"),
+        }
+
+        res = venue_service.update_venue(venue_id, data)
+        if res.get("success"):
+            return redirect(url_for("web_admin_bp.admin_venues", success="Venue updated successfully"))
+        else:
+            error = res.get("message")
+
+    return render_template("admin/venues/edit.html", venue=venue, error=error)
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/delete", methods=["POST"])
+def delete_venue(venue_id):
+    """Delete a venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    res = venue_service.delete_venue(venue_id)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_venues", error=res.get("message")))
+    return redirect(url_for("web_admin_bp.admin_venues", success="Venue deleted successfully"))
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/seats", methods=["GET"])
+def venue_seats(venue_id):
+    """View and configure seats for a venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    venue_res = venue_service.get_venue_by_id(venue_id)
+    if not venue_res.get("success"):
+        return render_template("error.html", message="Venue not found", status_code=404), 404
+
+    venue = venue_res.get("data", {})
+    seats_res = seat_service.get_seats_by_venue(venue_id)
+    seats = seats_res.get("data", [])
+
+    error = request.args.get("error")
+    success = request.args.get("success")
+
+    return render_template(
+        "admin/venues/seats.html",
+        venue=venue,
+        seats=seats,
+        error=error,
+        success=success,
+    )
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/seats/generate", methods=["POST"])
+def generate_venue_seats(venue_id):
+    """Generate a grid of seats for a venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    num_rows = int(request.form.get("num_rows", 5) or 5)
+    seats_per_row = int(request.form.get("seats_per_row", 10) or 10)
+    section_name = request.form.get("section_name", "Orchestra").strip()
+    seat_type = request.form.get("seat_type", "standard").strip()
+    price = float(request.form.get("price", 0.0) or 0.0)
+
+    res = seat_service.generate_seats_grid(
+        venue_id=venue_id,
+        num_rows=num_rows,
+        seats_per_row=seats_per_row,
+        section_name=section_name,
+        seat_type=seat_type,
+        price=price,
+    )
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, success=res.get("message")))
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/seats/create", methods=["POST"])
+def create_single_seat(venue_id):
+    """Create a single seat for a venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    seat_number = request.form.get("seat_number", "").strip()
+    section_name = request.form.get("section_name", "General").strip()
+    seat_type = request.form.get("seat_type", "standard").strip()
+    price = float(request.form.get("price", 0.0) or 0.0)
+
+    res = seat_service.create_seat({
+        "venue_id": venue_id,
+        "seat_number": seat_number,
+        "section_name": section_name,
+        "seat_type": seat_type,
+        "price": price,
+        "is_active": True,
+    })
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, success=f"Seat {seat_number} added successfully"))
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/seats/<int:seat_id>/delete", methods=["POST"])
+def delete_single_seat(venue_id, seat_id):
+    """Delete a single seat."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    res = seat_service.delete_seat(seat_id)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, success="Seat deleted successfully"))
+
+
+@web_admin_bp.route("/venues/<int:venue_id>/seats/clear", methods=["POST"])
+def clear_all_seats(venue_id):
+    """Clear all seats for a venue."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    res = seat_service.clear_venue_seats(venue_id)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.venue_seats", venue_id=venue_id, success=res.get("message")))
 
 
 @web_admin_bp.route("/bookings")
@@ -245,9 +484,24 @@ def admin_bookings():
 
 @web_admin_bp.route("/analytics")
 def admin_analytics():
-    """Analytics placeholder page."""
+    """Admin Analytics dashboard with real database metrics."""
     admin_user, err_resp = _require_admin()
     if err_resp:
         return err_resp
 
-    return render_template("admin/analytics.html")
+    days_param = request.args.get("days")
+    days = int(days_param) if days_param and days_param.isdigit() else None
+
+    from Services.analytics_service import AnalyticsService
+    analytics_service = AnalyticsService()
+    analytics_res = analytics_service.get_full_analytics(days=days)
+    analytics_data = analytics_res.get("data", {})
+
+    return render_template(
+        "admin/analytics.html",
+        summary=analytics_data.get("summary", {}),
+        top_events=analytics_data.get("top_events", []),
+        revenue_by_category=analytics_data.get("revenue_by_category", []),
+        sales_over_time=analytics_data.get("sales_over_time", []),
+        filter_days=days,
+    )

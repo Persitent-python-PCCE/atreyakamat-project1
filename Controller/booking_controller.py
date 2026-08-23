@@ -179,3 +179,23 @@ def delete_booking(booking_id):
     """Delete a booking (Admin only)."""
     result = booking_service.delete_booking(booking_id)
     return jsonify(result), result.get("status", 200)
+
+
+@booking_bp.post("/register")
+def api_register_root():
+    """Alias for /api/auth/register."""
+    data = request.get_json(silent=True) or {}
+    from Services.auth_service import AuthService
+    result = AuthService().register(data)
+    return jsonify(result), result.get("status", 200)
+
+
+@booking_bp.post("/login")
+def api_login_root():
+    """Alias for /api/auth/login."""
+    data = request.get_json(silent=True) or {}
+    email = data.get("email", "")
+    password = data.get("password", "")
+    from Services.auth_service import AuthService
+    result = AuthService().login(email, password)
+    return jsonify(result), result.get("status", 200)

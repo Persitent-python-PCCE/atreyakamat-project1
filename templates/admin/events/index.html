@@ -69,7 +69,9 @@
                     <div class="d-flex gap-1">
                       <a href="/events/{{ e.id }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="View event page">View</a>
                       <a href="/admin/events/{{ e.id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit event">Edit</a>
+                      <a href="/admin/events/{{ e.id }}/reschedule" class="btn btn-sm btn-outline-warning text-dark fw-semibold" title="Reschedule event date/time">Reschedule</a>
                       <form method="POST" action="/admin/events/{{ e.id }}/delete" onsubmit="return confirm('Are you sure you want to delete event &quot;{{ e.title }}&quot;?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete event">Delete</button>
                       </form>
                     </div>
