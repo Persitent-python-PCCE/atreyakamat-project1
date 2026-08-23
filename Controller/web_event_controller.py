@@ -93,6 +93,10 @@ def select_seats(event_id):
 
     event = event_res.get("data", {})
 
+    # If event is General Admission (no seat selection required), direct to checkout
+    if not event.get("requires_seats"):
+        return redirect(url_for("web_event_bp.checkout_page", event_id=event_id))
+
     seat_map_res = seat_service.get_event_seat_map(event_id, user_id=current_user["id"])
     seat_data = seat_map_res.get("data", {}) if seat_map_res.get("success") else {"seats": [], "summary": {}}
 
@@ -154,6 +158,13 @@ def checkout_page(event_id):
 
     # Extract user selections from query parameters or POST form
     promo_code = (request.form.get("promo_code") or request.args.get("promo_code") or "").strip()
+    raw_qty = request.form.get("quantity") or request.args.get("quantity") or 1
+    try:
+        quantity = int(raw_qty)
+        if quantity < 1:
+            quantity = 1
+    except (ValueError, TypeError):
+        quantity = 1
 
     selected_addons = {}
     if request.method == "POST":
@@ -177,6 +188,11 @@ def checkout_page(event_id):
                 except ValueError:
                     pass
 
+    event_res = event_service.get_event_by_id(event_id)
+    if not event_res.get("success"):
+        return render_template("error.html", message="Event not found", status_code=404), 404
+    event = event_res.get("data", {})
+
     # Process Confirm Booking POST action
     if request.method == "POST" and request.form.get("action") == "confirm_booking":
         booking_result = booking_service.confirm_booking(
@@ -184,6 +200,7 @@ def checkout_page(event_id):
             event_id=event_id,
             selected_addons=selected_addons,
             promo_code=promo_code if promo_code else None,
+            quantity=quantity,
         )
 
         if booking_result.get("success"):
@@ -191,8 +208,8 @@ def checkout_page(event_id):
             return redirect(url_for("web_event_bp.booking_success", booking_reference=ref))
         else:
             error_msg = booking_result.get("message", "Booking confirmation failed")
-            # If hold expired, redirect to seat selection with message
-            if "expired" in error_msg.lower() or "hold" in error_msg.lower():
+            # If seated and hold expired, redirect to seat selection
+            if event.get("requires_seats") and ("expired" in error_msg.lower() or "hold" in error_msg.lower()):
                 flash(error_msg, "error")
                 return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
 
@@ -202,16 +219,16 @@ def checkout_page(event_id):
                 event_id=event_id,
                 promo_code=promo_code if promo_code else None,
                 selected_addons=selected_addons,
+                quantity=quantity,
             )
             calc_data = calc_res.get("data", {}) if calc_res.get("success") else {}
-            event_res = event_service.get_event_by_id(event_id)
-            event = event_res.get("data", {})
             return render_template(
                 "events/checkout.html",
                 event=event,
                 checkout=calc_data,
                 user=current_user,
                 promo_code=promo_code,
+                quantity=quantity,
                 error=error_msg,
             )
 
@@ -221,16 +238,26 @@ def checkout_page(event_id):
         event_id=event_id,
         promo_code=promo_code if promo_code else None,
         selected_addons=selected_addons,
+        quantity=quantity,
     )
 
     if not calc_res.get("success"):
-        # If no active holds or hold expired, redirect back to seat selection
-        flash(calc_res.get("message", "Seat hold expired or unavailable"), "warning")
-        return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
+        error_msg = calc_res.get("message", "Checkout preview unavailable")
+        if event.get("requires_seats"):
+            flash(error_msg, "warning")
+            return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
+        else:
+            return render_template(
+                "events/checkout.html",
+                event=event,
+                checkout={},
+                user=current_user,
+                promo_code=promo_code,
+                quantity=quantity,
+                error=error_msg,
+            )
 
     calc_data = calc_res.get("data", {})
-    event_res = event_service.get_event_by_id(event_id)
-    event = event_res.get("data", {})
 
     return render_template(
         "events/checkout.html",
@@ -238,8 +265,30 @@ def checkout_page(event_id):
         checkout=calc_data,
         user=current_user,
         promo_code=promo_code,
+        quantity=quantity,
         error=None,
     )
+
+
+@web_event_bp.route("/bookings/<int:booking_id>/cancel", methods=["POST"])
+def cancel_booking_web(booking_id):
+    """Customer cancellation action from My Bookings page."""
+    current_user = get_current_user_info()
+    if not current_user:
+        return redirect(url_for("web_auth_bp.web_login", next="/my-bookings"))
+
+    result = booking_service.cancel_booking(
+        booking_id=booking_id,
+        user_id=current_user["id"],
+        is_admin=(current_user["role"] == "admin"),
+    )
+
+    if result.get("success"):
+        flash("Booking cancelled successfully.", "success")
+    else:
+        flash(result.get("message", "Could not cancel booking."), "error")
+
+    return redirect(url_for("web_event_bp.my_bookings"))
 
 
 @web_event_bp.route("/bookings/<string:booking_reference>")

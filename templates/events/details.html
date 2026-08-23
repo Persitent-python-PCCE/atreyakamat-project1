@@ -89,14 +89,26 @@
           </div>
 
           <div>
-            {% if current_user %}
-              <a href="/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
-                Select Seats 💺
-              </a>
+            {% if event.requires_seats %}
+              {% if current_user %}
+                <a href="/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
+                  Select Seats 💺
+                </a>
+              {% else %}
+                <a href="/login?next=/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
+                  Login to Select Seats 🎟️
+                </a>
+              {% endif %}
             {% else %}
-              <a href="/login?next=/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
-                Login to Select Seats 🎟️
-              </a>
+              {% if current_user %}
+                <a href="/events/{{ event.id }}/checkout" class="btn btn-primary btn-lg px-4 fw-bold">
+                  Book Tickets 🎟️
+                </a>
+              {% else %}
+                <a href="/login?next=/events/{{ event.id }}/checkout" class="btn btn-primary btn-lg px-4 fw-bold">
+                  Login to Book Tickets 🎟️
+                </a>
+              {% endif %}
             {% endif %}
           </div>
         </div>

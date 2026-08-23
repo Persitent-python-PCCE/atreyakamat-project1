@@ -5,13 +5,25 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2 class="fw-bold mb-1" style="color: var(--burgundy);">My Bookings</h2>
-      <p class="text-muted small mb-0">View all your confirmed tickets and booking history</p>
+      <p class="text-muted small mb-0">View all your confirmed tickets, order receipts, and booking history</p>
     </div>
     <div class="p-2 px-3 rounded shadow-sm" style="background: var(--surface); border: 1px solid var(--border);">
       <small class="text-muted d-block" style="font-size: 0.75rem;">Your Reward Balance</small>
       <strong class="fs-5" style="color: var(--primary);">${{ "%.2f"|format(user.reward_balance or 0.0) }}</strong>
     </div>
   </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert {% if category == 'error' or category == 'danger' %}alert-danger{% elif category == 'warning' %}alert-warning{% else %}alert-success{% endif %} alert-dismissible fade show small mb-3" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
   <div class="card shadow-sm border-0 p-4">
     {% if bookings and bookings|length > 0 %}
@@ -35,16 +47,55 @@
                 <td>{{ b.event_title }}</td>
                 <td class="text-muted small">{{ b.booked_at[:10] if b.booked_at else '' }}</td>
                 <td class="fw-bold">${{ "%.2f"|format(b.total_amount) }}</td>
-                <td class="text-success small fw-semibold">+${{ "%.2f"|format(b.cashback_amount or 0.0) }}</td>
+                <td class="text-success small fw-semibold">
+                  {% if b.status == 'cancelled' %}
+                    <span class="text-muted text-decoration-line-through">${{ "%.2f"|format(b.cashback_amount or 0.0) }}</span>
+                  {% else %}
+                    +${{ "%.2f"|format(b.cashback_amount or 0.0) }}
+                  {% endif %}
+                </td>
                 <td>
                   <span class="badge {% if b.status == 'confirmed' %}bg-success{% elif b.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} text-capitalize">
                     {{ b.status }}
                   </span>
                 </td>
                 <td>
-                  <div class="d-flex gap-1">
-                    <a href="/bookings/{{ b.booking_reference }}/ticket" class="btn btn-sm btn-primary" title="View & Scan Ticket">🎟️ Ticket</a>
+                  <div class="d-flex gap-1 align-items-center">
+                    {% if b.status != 'cancelled' %}
+                      <a href="/bookings/{{ b.booking_reference }}/ticket" class="btn btn-sm btn-primary" title="View &amp; Scan Ticket">🎟️ Ticket</a>
+                    {% endif %}
                     <a href="/bookings/{{ b.booking_reference }}" class="btn btn-sm btn-outline-secondary" title="View Receipt">Receipt</a>
+                    
+                    {% if b.status in ['confirmed', 'pending'] %}
+                      <!-- Cancel Action Button triggering modal -->
+                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ b.id }}" title="Cancel Booking">
+                        Cancel
+                      </button>
+
+                      <!-- Cancellation Confirmation Modal -->
+                      <div class="modal fade" id="cancelModal{{ b.id }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ b.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content">
+                            <div class="modal-header border-0 pb-0">
+                              <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel{{ b.id }}">Cancel Booking</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body py-3">
+                              <p class="mb-2">Are you sure you want to cancel booking <strong>{{ b.booking_reference }}</strong> for <em>{{ b.event_title }}</em>?</p>
+                              <div class="alert alert-warning small mb-0">
+                                ⚠️ <strong>Note:</strong> Your digital ticket will be invalidated, reserved seats will be released, and any earned cashback (+${{ "%.2f"|format(b.cashback_amount or 0.0) }}) will be deducted from your reward balance.
+                              </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Keep Booking</button>
+                              <form method="POST" action="/bookings/{{ b.id }}/cancel" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm">Yes, Cancel Booking</button>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {% endif %}
                   </div>
                 </td>
               </tr>

@@ -1,6 +1,6 @@
 # Controller/booking_controller.py
 #
-# BookingController — handles HTTP requests for booking and checkout operations.
+# BookingController — handles HTTP requests for booking, checkout, and cancellation operations.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -14,12 +14,13 @@ booking_service = BookingService()
 @booking_bp.post("/checkout/preview")
 @jwt_required()
 def preview_checkout():
-    """Calculate and preview checkout amounts for active seat holds, addons, and promo."""
+    """Calculate and preview checkout amounts for active seat holds or general admission, addons, and promo."""
     user_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
     event_id = data.get("event_id")
     promo_code = data.get("promo_code")
     selected_addons = data.get("selected_addons", {})
+    quantity = data.get("quantity")
 
     if not event_id:
         return jsonify({"success": False, "message": "event_id is required"}), 400
@@ -29,6 +30,7 @@ def preview_checkout():
         event_id=int(event_id),
         promo_code=promo_code,
         selected_addons=selected_addons,
+        quantity=quantity,
     )
     return jsonify(result), result.get("status", 200)
 
@@ -37,12 +39,13 @@ def preview_checkout():
 @booking_bp.post("/bookings")
 @jwt_required()
 def confirm_booking():
-    """Confirm booking in one atomic database transaction with hold consumption, promo, and 2% reward."""
+    """Confirm booking in one atomic database transaction with hold consumption / GA tickets, promo, 2% reward, and ticket generation."""
     user_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
     event_id = data.get("event_id")
     promo_code = data.get("promo_code")
     selected_addons = data.get("selected_addons", {})
+    quantity = data.get("quantity")
 
     if not event_id:
         return jsonify({"success": False, "message": "event_id is required"}), 400
@@ -52,6 +55,23 @@ def confirm_booking():
         event_id=int(event_id),
         selected_addons=selected_addons,
         promo_code=promo_code,
+        quantity=quantity,
+    )
+    return jsonify(result), result.get("status", 200)
+
+
+@booking_bp.post("/bookings/<int:booking_id>/cancel")
+@jwt_required()
+def cancel_booking(booking_id):
+    """Customer or Admin cancellation of an eligible booking."""
+    current_user_id = int(get_jwt_identity())
+    current_role = get_jwt().get("role", "customer")
+    is_admin = (current_role == "admin")
+
+    result = booking_service.cancel_booking(
+        booking_id=booking_id,
+        user_id=current_user_id,
+        is_admin=is_admin,
     )
     return jsonify(result), result.get("status", 200)
 
