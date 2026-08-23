@@ -1,17 +1,36 @@
 # Controller/promo_controller.py
 #
-# PromoController — handles HTTP requests for promo code operations (Admin only).
-#
-# Flow:
-#     HTTP Request -> PromoController -> PromoCodeService -> PromoCodeDAO -> MySQL
+# PromoController — handles HTTP requests for promo code operations.
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from Services.promo_service import PromoCodeService
 from Controller.auth_guards import role_required
 
 promo_bp = Blueprint("promo_bp", __name__)
 promo_service = PromoCodeService()
+
+
+@promo_bp.post("/validate")
+def validate_promo():
+    """Validate a promo code and calculate discount for a subtotal."""
+    data = request.get_json(silent=True) or {}
+    code = data.get("code")
+    amount = float(data.get("amount", 0.0))
+
+    user_id = None
+    try:
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+        if identity:
+            user_id = int(identity)
+    except Exception:
+        pass
+
+    result = promo_service.validate_and_calculate_discount(
+        code=code, user_id=user_id, order_subtotal=amount
+    )
+    return jsonify(result), result.get("status", 200)
 
 
 @promo_bp.post("")

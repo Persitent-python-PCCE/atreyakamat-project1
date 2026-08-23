@@ -223,7 +223,24 @@ def admin_bookings():
     if err_resp:
         return err_resp
 
-    return render_template("admin/bookings.html")
+    bookings_res = booking_service.booking_dao.get_all_bookings()
+    all_bookings = []
+    for b in bookings_res:
+        ev = event_service.get_event_by_id(b.event_id).get("data", {})
+        u = user_service.get_user_by_id(b.user_id).get("data", {})
+        all_bookings.append({
+            "id": b.id,
+            "booking_reference": b.booking_reference,
+            "event_title": ev.get("title", "Event"),
+            "customer_name": u.get("name", "User"),
+            "customer_email": u.get("email", ""),
+            "total_amount": float(b.total_amount),
+            "cashback_amount": float(b.cashback_amount),
+            "status": b.status,
+            "booked_at": str(b.booked_at)[:10] if b.booked_at else "",
+        })
+
+    return render_template("admin/bookings.html", bookings=all_bookings)
 
 
 @web_admin_bp.route("/analytics")

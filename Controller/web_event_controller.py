@@ -1,22 +1,16 @@
 # Controller/web_event_controller.py
 #
-# WebEventController — handles HTML pages for browsing events, viewing details,
-# and the interactive Seat Selection & 1-minute Seat Hold workflow.
-#
-# Routes:
-#   GET  /events                                     -> Explore and search events
-#   GET  /events/<event_id>                          -> View event details
-#   GET  /events/<event_id>/seats                    -> Seat selection & seat map page
-#   GET  /events/<event_id>/book                     -> Alias for seat selection
-#   POST /events/<event_id>/seats/<seat_id>/hold     -> Hold seat action
-#   POST /events/<event_id>/seats/<seat_id>/release  -> Release seat action
-#   GET  /events/<event_id>/checkout                 -> Continue to checkout placeholder
+# WebEventController — handles HTML pages for browsing events, details,
+# interactive seat selection, checkout, promo application, and booking confirmation.
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
 from Services.event_service import EventService
 from Services.category_service import CategoryService
 from Services.venue_service import VenueService
 from Services.seat_service import SeatService
+from Services.booking_service import BookingService
+from Services.promo_service import PromoCodeService
+from DAO import EventAddonDAO
 from Controller.auth_guards import get_current_user_info
 
 web_event_bp = Blueprint("web_event_bp", __name__)
@@ -24,6 +18,9 @@ event_service = EventService()
 category_service = CategoryService()
 venue_service = VenueService()
 seat_service = SeatService()
+booking_service = BookingService()
+promo_service = PromoCodeService()
+event_addon_dao = EventAddonDAO()
 
 
 @web_event_bp.route("/events")
@@ -32,7 +29,6 @@ def list_events():
     search_query = (request.args.get("search") or request.args.get("q") or "").strip()
     category_filter = (request.args.get("category") or "").strip()
 
-    # Load categories for filter tabs
     cat_result = category_service.get_all_categories()
     categories = cat_result.get("data", []) if cat_result.get("success") else []
 
@@ -63,7 +59,6 @@ def event_detail(event_id):
 
     event = result.get("data", {})
 
-    # Load category and venue for display
     category = None
     venue = None
     if event.get("category_id"):
@@ -98,7 +93,6 @@ def select_seats(event_id):
 
     event = event_res.get("data", {})
 
-    # Load seat map for this event and user
     seat_map_res = seat_service.get_event_seat_map(event_id, user_id=current_user["id"])
     seat_data = seat_map_res.get("data", {}) if seat_map_res.get("success") else {"seats": [], "summary": {}}
 
@@ -148,29 +142,143 @@ def web_release_seat(event_id, seat_id):
     return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
 
 
-@web_event_bp.route("/events/<int:event_id>/checkout")
-def checkout_placeholder(event_id):
-    """Placeholder checkout page leading from seat selection."""
+# ---------------------------------------------------------------- #
+# CHECKOUT & BOOKING WEB PAGES
+# ---------------------------------------------------------------- #
+@web_event_bp.route("/events/<int:event_id>/checkout", methods=["GET", "POST"])
+def checkout_page(event_id):
+    """Checkout page: Review order, select add-ons, apply promo code, view 2% cashback, and confirm booking."""
+    current_user = get_current_user_info()
+    if not current_user:
+        return redirect(url_for("web_auth_bp.web_login", next=f"/events/{event_id}/checkout"))
+
+    # Extract user selections from query parameters or POST form
+    promo_code = (request.form.get("promo_code") or request.args.get("promo_code") or "").strip()
+
+    selected_addons = {}
+    if request.method == "POST":
+        for key, val in request.form.items():
+            if key.startswith("addon_"):
+                addon_id = key.replace("addon_", "")
+                try:
+                    qty = int(val)
+                    if qty > 0:
+                        selected_addons[addon_id] = qty
+                except ValueError:
+                    pass
+    else:
+        for key, val in request.args.items():
+            if key.startswith("addon_"):
+                addon_id = key.replace("addon_", "")
+                try:
+                    qty = int(val)
+                    if qty > 0:
+                        selected_addons[addon_id] = qty
+                except ValueError:
+                    pass
+
+    # Process Confirm Booking POST action
+    if request.method == "POST" and request.form.get("action") == "confirm_booking":
+        booking_result = booking_service.confirm_booking(
+            user_id=current_user["id"],
+            event_id=event_id,
+            selected_addons=selected_addons,
+            promo_code=promo_code if promo_code else None,
+        )
+
+        if booking_result.get("success"):
+            ref = booking_result["data"]["booking_reference"]
+            return redirect(url_for("web_event_bp.booking_success", booking_reference=ref))
+        else:
+            error_msg = booking_result.get("message", "Booking confirmation failed")
+            # If hold expired, redirect to seat selection with message
+            if "expired" in error_msg.lower() or "hold" in error_msg.lower():
+                flash(error_msg, "error")
+                return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
+
+            # Otherwise re-render checkout with error
+            calc_res = booking_service.get_checkout_preview(
+                user_id=current_user["id"],
+                event_id=event_id,
+                promo_code=promo_code if promo_code else None,
+                selected_addons=selected_addons,
+            )
+            calc_data = calc_res.get("data", {}) if calc_res.get("success") else {}
+            event_res = event_service.get_event_by_id(event_id)
+            event = event_res.get("data", {})
+            return render_template(
+                "events/checkout.html",
+                event=event,
+                checkout=calc_data,
+                user=current_user,
+                promo_code=promo_code,
+                error=error_msg,
+            )
+
+    # Calculate live checkout preview
+    calc_res = booking_service.get_checkout_preview(
+        user_id=current_user["id"],
+        event_id=event_id,
+        promo_code=promo_code if promo_code else None,
+        selected_addons=selected_addons,
+    )
+
+    if not calc_res.get("success"):
+        # If no active holds or hold expired, redirect back to seat selection
+        flash(calc_res.get("message", "Seat hold expired or unavailable"), "warning")
+        return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
+
+    calc_data = calc_res.get("data", {})
+    event_res = event_service.get_event_by_id(event_id)
+    event = event_res.get("data", {})
+
+    return render_template(
+        "events/checkout.html",
+        event=event,
+        checkout=calc_data,
+        user=current_user,
+        promo_code=promo_code,
+        error=None,
+    )
+
+
+@web_event_bp.route("/bookings/<string:booking_reference>")
+@web_event_bp.route("/events/booking-success/<string:booking_reference>")
+def booking_success(booking_reference):
+    """Booking success confirmation page."""
     current_user = get_current_user_info()
     if not current_user:
         return redirect(url_for("web_auth_bp.web_login"))
 
-    event_res = event_service.get_event_by_id(event_id)
-    if not event_res.get("success"):
-        return render_template("error.html", message="Event not found", status_code=404), 404
+    result = booking_service.get_booking_by_reference(booking_reference)
+    if not result.get("success"):
+        return render_template("error.html", message="Booking not found", status_code=404), 404
 
-    event = event_res.get("data", {})
+    booking_data = result.get("data", {})
 
-    # Fetch currently held seats by this user
-    holds_res = seat_service.get_user_active_holds(user_id=current_user["id"], event_id=event_id)
-    held_items = holds_res.get("data", []) if holds_res.get("success") else []
-
-    if not held_items:
-        return redirect(url_for("web_event_bp.select_seats", event_id=event_id))
+    # Check ownership
+    if current_user["role"] != "admin" and booking_data.get("user_id") != current_user["id"]:
+        return render_template("error.html", message="You do not have permission to view this booking", status_code=403), 403
 
     return render_template(
-        "events/checkout_preview.html",
-        event=event,
-        holds=held_items,
+        "events/booking_success.html",
+        booking=booking_data,
+        user=current_user,
+    )
+
+
+@web_event_bp.route("/my-bookings")
+def my_bookings():
+    """Customer My Bookings list page."""
+    current_user = get_current_user_info()
+    if not current_user:
+        return redirect(url_for("web_auth_bp.web_login", next="/my-bookings"))
+
+    result = booking_service.get_user_bookings(current_user["id"])
+    bookings = result.get("data", []) if result.get("success") else []
+
+    return render_template(
+        "events/my_bookings.html",
+        bookings=bookings,
         user=current_user,
     )

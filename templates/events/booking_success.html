@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Success Header Banner -->
+      <div class="card shadow-sm border-0 p-4 text-center mb-4" style="background: var(--surface);">
+        <div class="display-3 mb-2">🎉</div>
+        <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Booking Confirmed!</h2>
+        <p class="text-muted mb-3">Thank you for booking with SeatMeUp. Your seats are now officially reserved.</p>
+
+        <div class="d-inline-block px-4 py-2 rounded shadow-sm mx-auto mb-2" style="background: var(--burgundy); color: #ffffff;">
+          <small class="text-white-50 d-block text-uppercase" style="letter-spacing: 0.1rem; font-size: 0.75rem;">Booking Reference</small>
+          <strong class="fs-4 text-white" style="letter-spacing: 0.05rem;">{{ booking.booking_reference }}</strong>
+        </div>
+      </div>
+
+      <!-- Booking Details Card -->
+      <div class="card shadow-sm border-0 p-4 mb-4">
+        <h4 class="fw-bold mb-3 pb-2 border-bottom" style="color: var(--burgundy);">Order Details</h4>
+
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6">
+            <small class="text-muted d-block">Event</small>
+            <strong class="text-dark fs-5">{{ booking.event_title }}</strong>
+          </div>
+          <div class="col-sm-6">
+            <small class="text-muted d-block">Date &amp; Time</small>
+            <strong class="text-dark">{{ booking.event_date }} {% if booking.start_time %}• {{ booking.start_time }}{% endif %}</strong>
+          </div>
+        </div>
+
+        <!-- Seats Table -->
+        <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Reserved Seats</h5>
+        <div class="table-responsive mb-4">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Seat</th>
+                <th class="text-end">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for it in booking['items'] %}
+                <tr>
+                  <td><strong>💺 Seat {{ it.seat_number }}</strong></td>
+                  <td class="text-end fw-semibold">${{ "%.2f"|format(it.unit_price) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Addons Table (if any) -->
+        {% if booking.addons and booking.addons|length > 0 %}
+          <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Add-ons</h5>
+          <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Add-on</th>
+                  <th>Quantity</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ad in booking.addons %}
+                  <tr>
+                    <td>{{ ad.name }}</td>
+                    <td>{{ ad.quantity }}</td>
+                    <td class="text-end fw-semibold">${{ "%.2f"|format(ad.total_price) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+
+        <!-- Pricing Breakdown -->
+        <div class="p-3 rounded mb-4" style="background: var(--surface);">
+          <div class="d-flex justify-content-between text-muted small mb-1">
+            <span>Discount Applied</span>
+            <span class="text-success fw-bold">-${{ "%.2f"|format(booking.discount_amount or 0.0) }}</span>
+          </div>
+          <div class="d-flex justify-content-between text-dark fs-5 fw-bold mt-2 pt-2 border-top">
+            <span>Total Paid</span>
+            <span style="color: var(--primary);">${{ "%.2f"|format(booking.total_amount) }}</span>
+          </div>
+        </div>
+
+        <!-- 2% Cashback Earned Badge -->
+        <div class="alert alert-success d-flex align-items-center justify-content-between mb-4 py-3" role="alert">
+          <div>
+            <strong>💰 2% Cashback Earned:</strong>
+            <span class="ms-1">+${{ "%.2f"|format(booking.cashback_amount or 0.0) }} credited to your reward wallet!</span>
+          </div>
+          <span class="badge bg-success">Credited</span>
+        </div>
+
+        <!-- Action Links -->
+        <div class="d-flex justify-content-between">
+          <a href="/events" class="btn btn-secondary">&larr; Explore More Events</a>
+          <a href="/my-bookings" class="btn btn-primary">View My Bookings &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

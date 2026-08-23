@@ -1,9 +1,6 @@
 # Controller/booking_controller.py
 #
-# BookingController — handles HTTP requests for booking operations.
-#
-# Flow:
-#     HTTP Request -> BookingController -> BookingService -> BookingDAO -> Booking Model -> MySQL
+# BookingController — handles HTTP requests for booking and checkout operations.
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -14,15 +11,48 @@ booking_bp = Blueprint("booking_bp", __name__)
 booking_service = BookingService()
 
 
+@booking_bp.post("/checkout/preview")
+@jwt_required()
+def preview_checkout():
+    """Calculate and preview checkout amounts for active seat holds, addons, and promo."""
+    user_id = int(get_jwt_identity())
+    data = request.get_json(silent=True) or {}
+    event_id = data.get("event_id")
+    promo_code = data.get("promo_code")
+    selected_addons = data.get("selected_addons", {})
+
+    if not event_id:
+        return jsonify({"success": False, "message": "event_id is required"}), 400
+
+    result = booking_service.get_checkout_preview(
+        user_id=user_id,
+        event_id=int(event_id),
+        promo_code=promo_code,
+        selected_addons=selected_addons,
+    )
+    return jsonify(result), result.get("status", 200)
+
+
+@booking_bp.post("/checkout/confirm")
 @booking_bp.post("/bookings")
 @jwt_required()
-def create_booking():
-    """Create a new booking for the authenticated user."""
+def confirm_booking():
+    """Confirm booking in one atomic database transaction with hold consumption, promo, and 2% reward."""
+    user_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
-    # Enforce user ownership: user_id always comes from the verified JWT identity
-    data["user_id"] = int(get_jwt_identity())
+    event_id = data.get("event_id")
+    promo_code = data.get("promo_code")
+    selected_addons = data.get("selected_addons", {})
 
-    result = booking_service.create_booking(data)
+    if not event_id:
+        return jsonify({"success": False, "message": "event_id is required"}), 400
+
+    result = booking_service.confirm_booking(
+        user_id=user_id,
+        event_id=int(event_id),
+        selected_addons=selected_addons,
+        promo_code=promo_code,
+    )
     return jsonify(result), result.get("status", 200)
 
 
@@ -46,7 +76,6 @@ def get_booking(booking_id):
     if not result.get("success"):
         return jsonify(result), result.get("status", 404)
 
-    # Check ownership
     booking_data = result.get("data", {})
     if current_role != "admin" and booking_data.get("user_id") != current_user_id:
         return jsonify({
