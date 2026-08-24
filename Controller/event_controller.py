@@ -10,6 +10,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from Services.event_service import EventService
 from Controller.auth_guards import role_required
 
+from api.schemas import EventCreateRequestSchema, EventUpdateRequestSchema, validate_payload
+
 event_bp = Blueprint("event_bp", __name__)
 event_service = EventService()
 
@@ -20,11 +22,15 @@ event_service = EventService()
 def create_event():
     """Create a new event (Admin only)."""
     data = request.get_json(silent=True) or {}
-    # If created_by is omitted, automatically assign current authenticated admin ID
-    if "created_by" not in data:
-        data["created_by"] = int(get_jwt_identity())
+    validated_data, err_resp = validate_payload(EventCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
 
-    result = event_service.create_event(data)
+    # If created_by is omitted, automatically assign current authenticated admin ID
+    if "created_by" not in validated_data:
+        validated_data["created_by"] = int(get_jwt_identity())
+
+    result = event_service.create_event(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -71,7 +77,10 @@ def get_event(event_id):
 def update_event(event_id):
     """Update an event (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = event_service.update_event(event_id, data)
+    validated_data, err_resp = validate_payload(EventUpdateRequestSchema, data, partial=True)
+    if err_resp:
+        return err_resp
+    result = event_service.update_event(event_id, validated_data)
     return jsonify(result), result.get("status", 200)
 
 

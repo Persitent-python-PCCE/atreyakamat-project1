@@ -50,8 +50,8 @@
                     <span class="d-block fw-semibold">{{ b.customer_name }}</span>
                     <small class="text-muted">{{ b.customer_email }}</small>
                   </td>
-                  <td class="fw-bold" style="color: var(--primary);">${{ "%.2f"|format(b.total_amount) }}</td>
-                  <td class="text-success small fw-bold">+${{ "%.2f"|format(b.cashback_amount or 0.0) }}</td>
+                  <td class="fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(b.total_amount) }}</td>
+                  <td class="text-success small fw-bold">+₹{{ "%.2f"|format(b.cashback_amount or 0.0) }}</td>
                   <td>
                     <span class="badge {% if b.status == 'confirmed' %}bg-success{% elif b.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} text-capitalize">
                       {{ b.status }}

@@ -7,6 +7,14 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from Services.booking_service import BookingService
 from Controller.auth_guards import role_required
 
+from api.schemas import (
+    CheckoutPreviewRequestSchema,
+    CheckoutConfirmRequestSchema,
+    RegisterRequestSchema,
+    LoginRequestSchema,
+    validate_payload,
+)
+
 booking_bp = Blueprint("booking_bp", __name__)
 booking_service = BookingService()
 
@@ -17,20 +25,16 @@ def preview_checkout():
     """Calculate and preview checkout amounts for active seat holds or general admission, addons, and promo."""
     user_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
-    event_id = data.get("event_id")
-    promo_code = data.get("promo_code")
-    selected_addons = data.get("selected_addons", {})
-    quantity = data.get("quantity")
-
-    if not event_id:
-        return jsonify({"success": False, "message": "event_id is required"}), 400
+    validated_data, err_resp = validate_payload(CheckoutPreviewRequestSchema, data)
+    if err_resp:
+        return err_resp
 
     result = booking_service.get_checkout_preview(
         user_id=user_id,
-        event_id=int(event_id),
-        promo_code=promo_code,
-        selected_addons=selected_addons,
-        quantity=quantity,
+        event_id=int(validated_data["event_id"]),
+        promo_code=validated_data.get("promo_code"),
+        selected_addons=validated_data.get("selected_addons") or {},
+        quantity=validated_data.get("quantity"),
     )
     return jsonify(result), result.get("status", 200)
 
@@ -42,20 +46,16 @@ def confirm_booking():
     """Confirm booking in one atomic database transaction with hold consumption / GA tickets, promo, 2% reward, and ticket generation."""
     user_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
-    event_id = data.get("event_id")
-    promo_code = data.get("promo_code")
-    selected_addons = data.get("selected_addons", {})
-    quantity = data.get("quantity")
-
-    if not event_id:
-        return jsonify({"success": False, "message": "event_id is required"}), 400
+    validated_data, err_resp = validate_payload(CheckoutConfirmRequestSchema, data)
+    if err_resp:
+        return err_resp
 
     result = booking_service.confirm_booking(
         user_id=user_id,
-        event_id=int(event_id),
-        selected_addons=selected_addons,
-        promo_code=promo_code,
-        quantity=quantity,
+        event_id=int(validated_data["event_id"]),
+        selected_addons=validated_data.get("selected_addons") or {},
+        promo_code=validated_data.get("promo_code"),
+        quantity=validated_data.get("quantity"),
     )
     return jsonify(result), result.get("status", 200)
 
@@ -185,8 +185,11 @@ def delete_booking(booking_id):
 def api_register_root():
     """Alias for /api/auth/register."""
     data = request.get_json(silent=True) or {}
+    validated_data, err_resp = validate_payload(RegisterRequestSchema, data)
+    if err_resp:
+        return err_resp
     from Services.auth_service import AuthService
-    result = AuthService().register(data)
+    result = AuthService().register(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -194,8 +197,9 @@ def api_register_root():
 def api_login_root():
     """Alias for /api/auth/login."""
     data = request.get_json(silent=True) or {}
-    email = data.get("email", "")
-    password = data.get("password", "")
+    validated_data, err_resp = validate_payload(LoginRequestSchema, data)
+    if err_resp:
+        return err_resp
     from Services.auth_service import AuthService
-    result = AuthService().login(email, password)
+    result = AuthService().login(validated_data["email"], validated_data["password"])
     return jsonify(result), result.get("status", 200)

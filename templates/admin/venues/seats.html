@@ -92,7 +92,7 @@
                 <input type="text" name="section_name" class="form-control form-control-sm" value="Orchestra" placeholder="e.g. Orchestra">
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-semibold">Seat Price ($) <small class="text-muted">(0 = inherit event base price)</small></label>
+                <label class="form-label small fw-semibold">Seat Price (₹) <small class="text-muted">(0 = inherit event base price)</small></label>
                 <input type="number" step="0.01" min="0" name="price" class="form-control form-control-sm" value="0.00">
               </div>
             </div>
@@ -120,7 +120,7 @@
                 <input type="text" name="section_name" class="form-control form-control-sm" value="VIP Box" placeholder="e.g. Balcony">
               </div>
               <div class="col-6">
-                <label class="form-label small fw-semibold">Price ($)</label>
+                <label class="form-label small fw-semibold">Price (₹)</label>
                 <input type="number" step="0.01" min="0" name="price" class="form-control form-control-sm" value="0.00">
               </div>
             </div>
@@ -156,7 +156,7 @@
               <span class="badge bg-white text-dark border p-2 shadow-sm" style="font-size: 0.85rem;">
                 {{ s.seat_number }}
                 {% if s.price and s.price > 0 %}
-                  <small class="text-success d-block">${{ "%.2f"|format(s.price) }}</small>
+                  <small class="text-success d-block">₹{{ "%.2f"|format(s.price) }}</small>
                 {% else %}
                   <small class="text-muted d-block">{{ s.section_name or 'General' }}</small>
                 {% endif %}
@@ -186,7 +186,7 @@
                   <td><span class="badge bg-light text-dark border">{{ s.section_name or 'General' }}</span></td>
                   <td>
                     {% if s.price and s.price > 0 %}
-                      ${{ "%.2f"|format(s.price) }}
+                      ₹{{ "%.2f"|format(s.price) }}
                     {% else %}
                       <span class="text-muted">Inherits Event Price</span>
                     {% endif %}

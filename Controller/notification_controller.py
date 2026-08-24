@@ -10,6 +10,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from Services.notification_service import NotificationService
 from Controller.auth_guards import role_required
 
+from api.schemas import NotificationCreateRequestSchema, validate_payload
+
 notification_bp = Blueprint("notification_bp", __name__)
 notification_service = NotificationService()
 
@@ -46,7 +48,10 @@ def list_user_notifications(user_id):
 def create_notification():
     """Create a new notification (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = notification_service.create_notification(data)
+    validated_data, err_resp = validate_payload(NotificationCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = notification_service.create_notification(validated_data)
     return jsonify(result), result.get("status", 200)
 
 

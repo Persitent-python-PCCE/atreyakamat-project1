@@ -29,8 +29,8 @@
               <tr>
                 <td><strong class="font-monospace">{{ b.booking_reference }}</strong></td>
                 <td class="text-muted">{{ b.booked_at[:10] if b.booked_at else '—' }}</td>
-                <td class="fw-bold">${{ "%.2f"|format(b.total_amount or 0.0) }}</td>
-                <td class="text-secondary">${{ "%.2f"|format(b.discount_amount or 0.0) }}</td>
+                <td class="fw-bold">₹{{ "%.2f"|format(b.total_amount or 0.0) }}</td>
+                <td class="text-secondary">₹{{ "%.2f"|format(b.discount_amount or 0.0) }}</td>
                 <td>
                   <span class="badge {% if b.status == 'confirmed' %}bg-success{% elif b.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %} text-capitalize">
                     {{ b.status }}

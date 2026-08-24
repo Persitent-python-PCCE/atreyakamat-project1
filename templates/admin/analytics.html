@@ -46,8 +46,8 @@
       <div class="col-sm-6 col-xl-4">
         <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid var(--primary) !important;">
           <span class="text-muted small text-uppercase fw-semibold">Total Revenue</span>
-          <h2 class="fw-bold my-2" style="color: var(--primary);">${{ "%.2f"|format(summary.total_revenue or 0.0) }}</h2>
-          <span class="small text-muted">Avg Order Value: <strong>${{ "%.2f"|format(summary.average_booking_value or 0.0) }}</strong></span>
+          <h2 class="fw-bold my-2" style="color: var(--primary);">₹{{ "%.2f"|format(summary.total_revenue or 0.0) }}</h2>
+          <span class="small text-muted">Avg Order Value: <strong>₹{{ "%.2f"|format(summary.average_booking_value or 0.0) }}</strong></span>
         </div>
       </div>
 
@@ -91,7 +91,7 @@
       <div class="col-sm-6 col-xl-4">
         <div class="card shadow-sm border-0 p-3 h-100">
           <span class="text-muted small text-uppercase fw-semibold">2% Cashback Given</span>
-          <h3 class="fw-bold my-2 text-success">+${{ "%.2f"|format(summary.cashback_given or 0.0) }}</h3>
+          <h3 class="fw-bold my-2 text-success">+₹{{ "%.2f"|format(summary.cashback_given or 0.0) }}</h3>
           <span class="small text-muted">User wallet rewards</span>
         </div>
       </div>
@@ -143,7 +143,7 @@
                       <span class="text-muted small">—</span>
                     {% endif %}
                   </td>
-                  <td class="text-end fw-bold" style="color: var(--primary);">${{ "%.2f"|format(ev.revenue) }}</td>
+                  <td class="text-end fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(ev.revenue) }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -180,7 +180,7 @@
                       <td><strong>{{ cat.name }}</strong></td>
                       <td class="text-center">{{ cat.bookings_count }}</td>
                       <td class="text-center fw-bold">{{ cat.tickets_sold }}</td>
-                      <td class="text-end fw-bold" style="color: var(--primary);">${{ "%.2f"|format(cat.revenue) }}</td>
+                      <td class="text-end fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(cat.revenue) }}</td>
                     </tr>
                   {% endfor %}
                 </tbody>
@@ -218,7 +218,7 @@
                     <td><strong>{{ day.date }}</strong> ({{ day.display_date }})</td>
                     <td class="text-center">{{ day.bookings }}</td>
                     <td class="text-center fw-bold">{{ day.tickets }}</td>
-                    <td class="text-end fw-bold" style="color: var(--primary);">${{ "%.2f"|format(day.revenue) }}</td>
+                    <td class="text-end fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(day.revenue) }}</td>
                   </tr>
                 {% endif %}
               {% endfor %}

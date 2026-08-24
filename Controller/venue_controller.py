@@ -10,6 +10,8 @@ from flask_jwt_extended import jwt_required
 from Services.venue_service import VenueService
 from Controller.auth_guards import role_required
 
+from api.schemas import VenueCreateRequestSchema, VenueUpdateRequestSchema, validate_payload
+
 venue_bp = Blueprint("venue_bp", __name__)
 venue_service = VenueService()
 
@@ -20,7 +22,10 @@ venue_service = VenueService()
 def create_venue():
     """Create a new venue (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = venue_service.create_venue(data)
+    validated_data, err_resp = validate_payload(VenueCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = venue_service.create_venue(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -44,7 +49,10 @@ def get_venue(venue_id):
 def update_venue(venue_id):
     """Update a venue (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = venue_service.update_venue(venue_id, data)
+    validated_data, err_resp = validate_payload(VenueUpdateRequestSchema, data, partial=True)
+    if err_resp:
+        return err_resp
+    result = venue_service.update_venue(venue_id, validated_data)
     return jsonify(result), result.get("status", 200)
 
 

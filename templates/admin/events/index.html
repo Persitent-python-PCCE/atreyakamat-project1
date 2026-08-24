@@ -57,7 +57,7 @@
                       {{ e.status }}
                     </span>
                   </td>
-                  <td class="fw-bold" style="color: var(--primary);">${{ "%.2f"|format(e.base_price or 0.0) }}</td>
+                  <td class="fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(e.base_price or 0.0) }}</td>
                   <td>
                     {% if e.booking_open %}
                       <span class="badge bg-success">Yes</span>

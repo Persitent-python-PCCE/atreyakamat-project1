@@ -1,44 +1,72 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Hero Section with Search Input -->
-<section class="hero">
-  <div class="container">
-    <p class="eyebrow">Your Seat. Your Event. Your Moment.</p>
-    <h1>Smart Event Ticket Booking &amp; Management Platform</h1>
-    <p>
-      Discover concerts, theatre, sports, and live shows. Pick your favorite seats, book in seconds, and enjoy unforgettable experiences.
-    </p>
+<!-- 1. Hero Section with Balanced Brand Integration -->
+<section class="hero my-2">
+  <div class="row align-items-center gy-4">
+    <!-- Left Hero Column -->
+    <div class="col-lg-7">
+      <div class="d-inline-flex align-items-center gap-2 mb-2 px-3 py-1 rounded-pill" style="background: rgba(230, 74, 25, 0.09); border: 1px solid rgba(230, 74, 25, 0.2);">
+        <span class="fs-6">🎟️</span>
+        <span class="eyebrow" style="font-size: 0.76rem; letter-spacing: 0.08rem;">Smart Event Ticketing &amp; Seat Selection</span>
+      </div>
 
-    <!-- Search Box in Hero -->
-    <div class="my-4" style="max-width: 600px;">
-      <form method="GET" action="/events" class="d-flex gap-2">
-        <input type="text" name="search" class="form-control form-control-lg" placeholder="Search events by title or keyword..." style="background: #ffffff;">
-        <button type="submit" class="btn btn-primary btn-lg px-4">Search</button>
-      </form>
+      <h1 class="display-5 fw-bold mb-3" style="color: var(--burgundy); letter-spacing: -0.02rem; line-height: 1.15;">
+        Find Your Next <span style="color: var(--primary);">Experience.</span>
+      </h1>
+      <p class="text-muted fs-6 mb-4" style="max-width: 540px; line-height: 1.6;">
+        Discover concerts, theatre, sports, and live shows. Pick your favorite seats in real-time, hold them securely, and book your digital admission pass in seconds.
+      </p>
+
+      <!-- Real Live Search Form in Hero -->
+      <div class="mb-4" style="max-width: 520px;">
+        <form method="GET" action="/events" class="d-flex gap-2">
+          <input type="text" name="search" class="form-control form-control-lg fs-6" placeholder="Search events by title or keyword..." style="background: #ffffff;" aria-label="Search events">
+          <button type="submit" class="btn btn-primary px-4 fw-bold">Search</button>
+        </form>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary btn-lg" href="/events">Explore All Events &rarr;</a>
+        <a class="btn btn-outline-secondary btn-lg" href="#how-it-works">How It Works</a>
+        {% if not current_user %}
+          <a class="btn btn-secondary btn-lg" href="/register">Create Free Account</a>
+        {% endif %}
+      </div>
     </div>
 
-    <div class="actions">
-      <a class="btn btn-primary" href="/events">Explore All Events</a>
-      {% if not current_user %}
-        <a class="btn btn-secondary" href="/register">Create Account</a>
-      {% else %}
-        <a class="btn btn-secondary" href="/dashboard">My Dashboard</a>
-      {% endif %}
+    <!-- Right Hero Brand Card Column -->
+    <div class="col-lg-5 text-center">
+      <div class="hero-brand-card">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SeatMeUp" class="hero-logo-img mb-3">
+        <h4 class="fw-bold mb-1" style="color: var(--burgundy);">Seat<span style="color: var(--primary);">Me</span>Up</h4>
+        <p class="text-muted small mb-3">BOOK • ENJOY • EXPERIENCE</p>
+        
+        <div class="d-flex flex-wrap justify-content-center gap-2 pt-2 border-top">
+          <span class="badge-smu">💺 Real-time Seats</span>
+          <span class="badge-smu">⏳ 1-Min Hold</span>
+          <span class="badge-smu">🎁 2% Cashback</span>
+          <span class="badge-smu">📱 QR Gate Scan</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Event Categories Section -->
+<!-- 2. Event Categories Section -->
 {% if categories and categories|length > 0 %}
-<section class="my-5">
+<section id="categories" class="my-5">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Browse by Category</h3>
-    <a href="/events" class="fw-bold text-decoration-none small" style="color: var(--primary);">View All &rarr;</a>
+    <div>
+      <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Browse by Category</h3>
+      <p class="text-muted small mb-0">Discover events across curated entertainment genres</p>
+    </div>
+    <a href="/events" class="fw-bold text-decoration-none small" style="color: var(--primary);">View All Categories &rarr;</a>
   </div>
   <div class="d-flex flex-wrap gap-2">
     {% for cat in categories %}
-      <a href="/events?category={{ cat.name }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1rem; border-color: var(--border); color: var(--burgundy) !important; background: var(--surface) !important;">
+      <a href="/events?category={{ cat.name }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1.1rem; border-color: var(--border); color: var(--burgundy) !important; background: var(--surface) !important;">
         🏷️ {{ cat.name }}
       </a>
     {% endfor %}
@@ -46,11 +74,11 @@
 </section>
 {% endif %}
 
-<!-- Upcoming Events Section -->
+<!-- 3. Upcoming Events Section -->
 <section class="my-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2 class="h3 fw-bold" style="color: var(--burgundy); margin: 0;">Upcoming Events</h2>
+      <h2 class="h3 fw-bold mb-1" style="color: var(--burgundy);">Upcoming Events</h2>
       <p class="text-muted small mb-0">Book early to secure your preferred seats</p>
     </div>
     <a href="/events" class="fw-bold text-decoration-none" style="color: var(--primary);">View All Events &rarr;</a>
@@ -60,28 +88,28 @@
     <div class="row row-cols-1 row-cols-md-3 g-4">
       {% for event in events %}
         <div class="col">
-          <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+          <div class="card h-100 shadow-sm border-0 d-flex flex-column event-card">
             {% if event.poster %}
-              <img src="{{ event.poster }}" class="card-img-top rounded mb-3" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
+              <img src="{{ event.poster }}" class="card-img-top" alt="{{ event.title }}">
             {% else %}
-              <div class="rounded d-flex align-items-center justify-content-center mb-3 text-white" style="height: 180px; background: var(--burgundy);">
-                <span class="fs-2">🎭</span>
+              <div class="rounded-top d-flex align-items-center justify-content-center text-white" style="height: 180px; background: var(--burgundy);">
+                <span class="fs-1">🎭</span>
               </div>
             {% endif %}
 
-            <div class="d-flex flex-column flex-grow-1">
-              <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="p-3 d-flex flex-column flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="badge-smu">{{ event.category_name or 'Event' }}</span>
                 {% if event.status == 'published' %}
-                  <span class="badge bg-success small">Available</span>
+                  <span class="badge badge-published">Available</span>
                 {% else %}
-                  <span class="badge bg-secondary small text-capitalize">{{ event.status }}</span>
+                  <span class="badge badge-draft text-capitalize">{{ event.status }}</span>
                 {% endif %}
               </div>
 
-              <h4 class="fw-bold my-2" style="color: var(--burgundy);">{{ event.title }}</h4>
+              <h5 class="fw-bold my-1 text-truncate" style="color: var(--burgundy);" title="{{ event.title }}">{{ event.title }}</h5>
 
-              <p class="text-muted small mb-2">
+              <p class="text-muted small mb-1">
                 📅 {{ event.event_date }} {% if event.start_time %}• ⏰ {{ event.start_time }}{% endif %}
               </p>
               <p class="text-muted small mb-2">
@@ -92,8 +120,11 @@
               </p>
 
               <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
-                <a href="/events/{{ event.id }}" class="btn btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">View Details</a>
+                <div>
+                  <small class="text-muted d-block" style="font-size: 0.72rem;">Starting from</small>
+                  <span class="price-tag">₹{{ "%.2f"|format(event.base_price or 0.0) }}</span>
+                </div>
+                <a href="/events/{{ event.id }}" class="btn btn-primary btn-sm">View Details</a>
               </div>
             </div>
           </div>
@@ -102,8 +133,9 @@
     </div>
   {% else %}
     <div class="card p-5 text-center my-3">
+      <div class="empty-state-icon">🎟️</div>
       <h4 class="text-muted mb-2">No upcoming events right now</h4>
-      <p class="text-secondary small mb-3">Check back soon for new concerts, workshops, and sports matches.</p>
+      <p class="text-secondary small mb-3">Check back soon for new concerts, workshops, and live performances.</p>
       {% if current_user and current_user.role == 'admin' %}
         <div>
           <a href="/admin/events/create" class="btn btn-primary btn-sm">+ Create First Event</a>
@@ -111,5 +143,107 @@
       {% endif %}
     </div>
   {% endif %}
+</section>
+
+<!-- 4. How It Works Section -->
+<section id="how-it-works" class="my-5 py-4 border-top">
+  <div class="text-center mb-4">
+    <span class="eyebrow">Seamless Ticket Booking</span>
+    <h2 class="h3 fw-bold" style="color: var(--burgundy);">How SeatMeUp Works</h2>
+    <p class="text-muted small">Reserve and experience events in three straightforward steps</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="step-card text-center">
+        <div class="step-number">01</div>
+        <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Discover Events</h5>
+        <p class="text-muted small mb-0">
+          Browse upcoming music, theatre, sports, and festival events with real-time date and venue details.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="step-card text-center">
+        <div class="step-number">02</div>
+        <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Choose &amp; Hold Seats</h5>
+        <p class="text-muted small mb-0">
+          Select your favorite seats on the interactive layout map with 1-minute concurrency hold protection.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="step-card text-center">
+        <div class="step-number">03</div>
+        <h5 class="fw-bold mb-2" style="color: var(--burgundy);">Get Digital QR Pass</h5>
+        <p class="text-muted small mb-0">
+          Instantly receive your official digital pass with entrance QR code, PDF download, and 2% reward cashback.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Why SeatMeUp Section -->
+<section class="my-5 py-4 border-top">
+  <div class="text-center mb-4">
+    <span class="eyebrow">Smart Platform Advantages</span>
+    <h2 class="h3 fw-bold" style="color: var(--burgundy);">Why Choose SeatMeUp</h2>
+    <p class="text-muted small">Engineered for smooth, transparent, and rewarding event admissions</p>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="col">
+      <div class="metric-card h-100">
+        <div class="fs-3 mb-2 text-primary">💺</div>
+        <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Interactive Seat Maps</h6>
+        <p class="text-muted small mb-0">Real-time visual seat grids for seated venues and simple quantity selection for general admission.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-card h-100">
+        <div class="fs-3 mb-2 text-primary">⏳</div>
+        <h6 class="fw-bold mb-1" style="color: var(--burgundy);">1-Minute Concurrency Hold</h6>
+        <p class="text-muted small mb-0">Lock your seats while completing checkout without worrying about double bookings.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-card h-100">
+        <div class="fs-3 mb-2 text-primary">📱</div>
+        <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Secure Digital Pass &amp; QR</h6>
+        <p class="text-muted small mb-0">Fast door scanning with unique token security, anti-duplicate validation, and downloadable PDF tickets.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-card h-100">
+        <div class="fs-3 mb-2 text-primary">💰</div>
+        <h6 class="fw-bold mb-1" style="color: var(--burgundy);">2% Cashback Reward Wallet</h6>
+        <p class="text-muted small mb-0">Earn 2% wallet balance on every confirmed booking automatically credited to your account.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-card h-100">
+        <div class="fs-3 mb-2 text-primary">🏷️</div>
+        <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Promo Codes &amp; Add-ons</h6>
+        <p class="text-muted small mb-0">Apply percentage or fixed discount promo codes and bundle event merchandise or VIP perks.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-card h-100">
+        <div class="fs-3 mb-2 text-primary">🔄</div>
+        <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Easy Self-Service Management</h6>
+        <p class="text-muted small mb-0">Track all your reservations, download receipts, and manage bookings anytime from your dashboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Call To Action Banner -->
+<section class="my-5 p-4 p-md-5 text-center rounded" style="background: linear-gradient(135deg, var(--burgundy) 0%, var(--burgundy-dark) 100%); color: #ffffff;">
+  <h2 class="fw-bold mb-2 text-white">Ready for your next experience?</h2>
+  <p class="text-white-50 mb-4" style="max-width: 500px; margin-inline: auto;">
+    Discover upcoming events and secure your tickets today with SeatMeUp.
+  </p>
+  <a href="/events" class="btn btn-primary btn-lg px-4 fw-bold">Explore Events Now &rarr;</a>
 </section>
 {% endblock %}

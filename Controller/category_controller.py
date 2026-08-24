@@ -10,6 +10,8 @@ from flask_jwt_extended import jwt_required
 from Services.category_service import CategoryService
 from Controller.auth_guards import role_required
 
+from api.schemas import CategoryCreateRequestSchema, CategoryUpdateRequestSchema, validate_payload
+
 category_bp = Blueprint("category_bp", __name__)
 category_service = CategoryService()
 
@@ -20,7 +22,10 @@ category_service = CategoryService()
 def create_category():
     """Create a new category (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = category_service.create_category(data)
+    validated_data, err_resp = validate_payload(CategoryCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = category_service.create_category(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -44,7 +49,10 @@ def get_category(category_id):
 def update_category(category_id):
     """Update a category (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = category_service.update_category(category_id, data)
+    validated_data, err_resp = validate_payload(CategoryUpdateRequestSchema, data, partial=True)
+    if err_resp:
+        return err_resp
+    result = category_service.update_category(category_id, validated_data)
     return jsonify(result), result.get("status", 200)
 
 

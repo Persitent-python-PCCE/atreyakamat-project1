@@ -7,6 +7,13 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_req
 from Services.promo_service import PromoCodeService
 from Controller.auth_guards import role_required
 
+from api.schemas import (
+    PromoValidateRequestSchema,
+    PromoCreateRequestSchema,
+    PromoUpdateRequestSchema,
+    validate_payload,
+)
+
 promo_bp = Blueprint("promo_bp", __name__)
 promo_service = PromoCodeService()
 
@@ -15,8 +22,12 @@ promo_service = PromoCodeService()
 def validate_promo():
     """Validate a promo code and calculate discount for a subtotal."""
     data = request.get_json(silent=True) or {}
-    code = data.get("code")
-    amount = float(data.get("amount", 0.0))
+    validated_data, err_resp = validate_payload(PromoValidateRequestSchema, data)
+    if err_resp:
+        return err_resp
+
+    code = validated_data.get("code")
+    amount = float(validated_data.get("amount", 0.0) or 0.0)
 
     user_id = None
     try:
@@ -39,7 +50,10 @@ def validate_promo():
 def create_promo():
     """Create a new promo code (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = promo_service.create_promo(data)
+    validated_data, err_resp = validate_payload(PromoCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = promo_service.create_promo(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -67,7 +81,10 @@ def get_promo(promo_id):
 def update_promo(promo_id):
     """Update a promo code (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = promo_service.update_promo(promo_id, data)
+    validated_data, err_resp = validate_payload(PromoUpdateRequestSchema, data, partial=True)
+    if err_resp:
+        return err_resp
+    result = promo_service.update_promo(promo_id, validated_data)
     return jsonify(result), result.get("status", 200)
 
 

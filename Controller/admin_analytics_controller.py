@@ -31,6 +31,14 @@ def get_admin_analytics():
     return jsonify(result), result.get("status", 200)
 
 
+from api.schemas import (
+    EventRescheduleRequestSchema,
+    EventCreateRequestSchema,
+    EventUpdateRequestSchema,
+    validate_payload,
+)
+
+
 @admin_analytics_bp.post("/events/<int:event_id>/reschedule")
 @jwt_required()
 def api_reschedule_event(event_id):
@@ -48,27 +56,18 @@ def api_reschedule_event(event_id):
 
     admin_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
-
-    new_event_date = data.get("new_event_date")
-    new_start_time = data.get("new_start_time")
-    new_end_time = data.get("new_end_time")
-    reason = data.get("reason")
-    password = data.get("password")
-
-    if not password:
-        return jsonify({
-            "success": False,
-            "message": "Admin password confirmation is required.",
-        }), 400
+    validated_data, err_resp = validate_payload(EventRescheduleRequestSchema, data)
+    if err_resp:
+        return err_resp
 
     result = reschedule_service.reschedule_event(
         event_id=event_id,
         admin_id=admin_id,
-        password=password,
-        new_event_date=new_event_date,
-        new_start_time=new_start_time,
-        new_end_time=new_end_time,
-        reason=reason,
+        password=validated_data["password"],
+        new_event_date=validated_data["new_event_date"],
+        new_start_time=validated_data["new_start_time"],
+        new_end_time=validated_data.get("new_end_time"),
+        reason=validated_data.get("reason"),
     )
     return jsonify(result), result.get("status", 200)
 
@@ -104,10 +103,14 @@ def api_admin_create_event():
     event_service = EventService()
 
     data = request.get_json(silent=True) or {}
-    if "created_by" not in data:
-        data["created_by"] = int(get_jwt_identity())
+    validated_data, err_resp = validate_payload(EventCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
 
-    result = event_service.create_event(data)
+    if "created_by" not in validated_data:
+        validated_data["created_by"] = int(get_jwt_identity())
+
+    result = event_service.create_event(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -123,7 +126,11 @@ def api_admin_update_event(event_id):
     event_service = EventService()
 
     data = request.get_json(silent=True) or {}
-    result = event_service.update_event(event_id, data)
+    validated_data, err_resp = validate_payload(EventUpdateRequestSchema, data, partial=True)
+    if err_resp:
+        return err_resp
+
+    result = event_service.update_event(event_id, validated_data)
     return jsonify(result), result.get("status", 200)
 
 

@@ -37,6 +37,8 @@ from Controller.auth_guards import role_required
 
 api_auth_bp = Blueprint("api_auth_bp", __name__)
 web_auth_bp = Blueprint("web_auth_bp", __name__)
+from api.schemas import RegisterRequestSchema, LoginRequestSchema, validate_payload
+
 auth_service = AuthService()
 
 
@@ -48,7 +50,10 @@ auth_service = AuthService()
 def api_register():
     """Register a new customer account via API."""
     data = request.get_json(silent=True) or {}
-    result = auth_service.register(data)
+    validated_data, err_resp = validate_payload(RegisterRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = auth_service.register(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -56,9 +61,10 @@ def api_register():
 def api_login():
     """Log in with email & password and receive a JWT access token."""
     data = request.get_json(silent=True) or {}
-    email = data.get("email", "")
-    password = data.get("password", "")
-    result = auth_service.login(email, password)
+    validated_data, err_resp = validate_payload(LoginRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = auth_service.login(validated_data["email"], validated_data["password"])
     return jsonify(result), result.get("status", 200)
 
 

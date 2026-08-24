@@ -10,6 +10,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from Services.user_service import UserService
 from Controller.auth_guards import role_required
 
+from api.schemas import UserCreateRequestSchema, UserUpdateRequestSchema, validate_payload
+
 user_bp = Blueprint("user_bp", __name__)
 user_service = UserService()
 
@@ -20,7 +22,10 @@ user_service = UserService()
 def create_user():
     """Create a new user (Admin only)."""
     data = request.get_json(silent=True) or {}
-    result = user_service.create_user(data)
+    validated_data, err_resp = validate_payload(UserCreateRequestSchema, data)
+    if err_resp:
+        return err_resp
+    result = user_service.create_user(validated_data)
     return jsonify(result), result.get("status", 200)
 
 
@@ -69,7 +74,11 @@ def update_user(user_id):
     if current_role != "admin" and "role" in data:
         data.pop("role")
 
-    result = user_service.update_user(user_id, data)
+    validated_data, err_resp = validate_payload(UserUpdateRequestSchema, data, partial=True)
+    if err_resp:
+        return err_resp
+
+    result = user_service.update_user(user_id, validated_data)
     return jsonify(result), result.get("status", 200)
 
 

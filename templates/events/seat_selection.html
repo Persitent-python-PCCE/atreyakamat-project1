@@ -25,7 +25,7 @@
       </div>
       <div class="text-md-end">
         <span class="text-muted small d-block">Base Ticket Price</span>
-        <span class="price-tag">${{ "%.2f"|format(event.base_price or 0.0) }}</span>
+        <span class="price-tag">₹{{ "%.2f"|format(event.base_price or 0.0) }}</span>
       </div>
     </div>
   </div>
@@ -67,9 +67,9 @@
                 <div class="col text-center">
                   {% if s.status == 'available' %}
                     <!-- Available: click to hold -->
-                    <button type="button" class="seat-btn available w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="hold" title="Seat {{ s.seat_number }} (${{ '%.2f'|format(s.price) }})">
+                    <button type="button" class="seat-btn available w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="hold" title="Seat {{ s.seat_number }} (₹{{ '%.2f'|format(s.price) }})">
                       <div class="seat-num">{{ s.seat_number }}</div>
-                      <div class="seat-price">${{ "%.2f"|format(s.price) }}</div>
+                      <div class="seat-price">₹{{ "%.2f"|format(s.price) }}</div>
                     </button>
                   {% elif s.status == 'held_by_me' %}
                     <!-- Held by Me: click to release -->
@@ -128,7 +128,7 @@
 
           <div class="d-flex justify-content-between text-muted small mb-3">
             <span>Total Price</span>
-            <span class="fs-4 fw-bold" style="color: var(--primary);">$<span id="summary-total">{{ "%.2f"|format(summary.user_total_price or 0.0) }}</span></span>
+            <span class="fs-4 fw-bold" style="color: var(--primary);">₹<span id="summary-total">{{ "%.2f"|format(summary.user_total_price or 0.0) }}</span></span>
           </div>
 
           <hr class="my-3">

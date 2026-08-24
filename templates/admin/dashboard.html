@@ -83,7 +83,7 @@
                 <tr>
                   <td><strong>{{ e.title }}</strong></td>
                   <td class="text-muted small">{{ e.event_date }}</td>
-                  <td class="fw-bold" style="color: var(--primary);">${{ "%.2f"|format(e.base_price or 0.0) }}</td>
+                  <td class="fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(e.base_price or 0.0) }}</td>
                   <td><span class="badge bg-success text-capitalize">{{ e.status }}</span></td>
                   <td>
                     <a href="/admin/events/{{ e.id }}/edit" class="btn btn-sm btn-outline-dark">Edit</a>

@@ -63,7 +63,7 @@
                     <td><strong>💺 {{ s.seat_number }}</strong></td>
                     <td class="text-muted small">{{ s.section_name }}</td>
                     <td><span class="badge-smu text-capitalize">{{ s.seat_type }}</span></td>
-                    <td class="text-end fw-bold">${{ "%.2f"|format(s.price) }}</td>
+                    <td class="text-end fw-bold">₹{{ "%.2f"|format(s.price) }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -84,7 +84,7 @@
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <strong class="d-block text-dark">Standard Admission</strong>
-                <span class="text-muted small">${{ "%.2f"|format(event.base_price or 0.0) }} per ticket</span>
+                <span class="text-muted small">₹{{ "%.2f"|format(event.base_price or 0.0) }} per ticket</span>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <label for="ga_qty_select" class="small text-muted mb-0 fw-semibold">Quantity:</label>
@@ -118,7 +118,7 @@
                   <div>
                     <strong class="d-block text-dark">{{ a.name }}</strong>
                     <small class="text-muted">{{ a.description or 'Event add-on' }}</small>
-                    <div class="text-primary fw-bold small mt-1">${{ "%.2f"|format(a.unit_price) }} each</div>
+                    <div class="text-primary fw-bold small mt-1">₹{{ "%.2f"|format(a.unit_price) }} each</div>
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <label class="small text-muted mb-0">Qty:</label>
@@ -160,7 +160,7 @@
 
         {% if checkout.discount_amount and checkout.discount_amount > 0 %}
           <div class="alert alert-success py-2 small mt-3 mb-0" role="alert">
-            ✓ <strong>{{ checkout.promo_code }}</strong> applied! You saved ${{ "%.2f"|format(checkout.discount_amount) }}
+            ✓ <strong>{{ checkout.promo_code }}</strong> applied! You saved ₹{{ "%.2f"|format(checkout.discount_amount) }}
           </div>
         {% elif checkout.promo_error %}
           <div class="alert alert-danger py-2 small mt-3 mb-0" role="alert">
@@ -179,20 +179,20 @@
           <span>
             Tickets Subtotal ({% if event.requires_seats %}{{ checkout.held_seats|length }} seats{% else %}{{ checkout.quantity or quantity or 1 }} tickets{% endif %})
           </span>
-          <span class="text-dark fw-semibold">${{ "%.2f"|format(checkout.ticket_subtotal or 0.0) }}</span>
+          <span class="text-dark fw-semibold">₹{{ "%.2f"|format(checkout.ticket_subtotal or 0.0) }}</span>
         </div>
 
         {% if checkout.addon_subtotal and checkout.addon_subtotal > 0 %}
           <div class="d-flex justify-content-between text-muted small mb-2">
             <span>Add-ons Subtotal</span>
-            <span class="text-dark fw-semibold">${{ "%.2f"|format(checkout.addon_subtotal) }}</span>
+            <span class="text-dark fw-semibold">₹{{ "%.2f"|format(checkout.addon_subtotal) }}</span>
           </div>
         {% endif %}
 
         {% if checkout.discount_amount and checkout.discount_amount > 0 %}
           <div class="d-flex justify-content-between text-success small mb-2">
             <span>Promo Discount ({{ checkout.promo_code }})</span>
-            <span class="fw-bold">-${{ "%.2f"|format(checkout.discount_amount) }}</span>
+            <span class="fw-bold">-₹{{ "%.2f"|format(checkout.discount_amount) }}</span>
           </div>
         {% endif %}
 
@@ -200,7 +200,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-3">
           <span class="fw-bold fs-5 text-dark">Total Amount</span>
-          <span class="fs-3 fw-bold" style="color: var(--primary);">${{ "%.2f"|format(checkout.final_amount or 0.0) }}</span>
+          <span class="fs-3 fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(checkout.final_amount or 0.0) }}</span>
         </div>
 
         <!-- 2% Cashback Reward Highlight -->
@@ -210,7 +210,7 @@
             <strong style="color: var(--primary);">2% Cashback Reward</strong>
           </div>
           <p class="small text-secondary mb-0">
-            You will earn <strong>${{ "%.2f"|format(checkout.cashback_amount or 0.0) }}</strong> in reward balance instantly on confirmation!
+            You will earn <strong>₹{{ "%.2f"|format(checkout.cashback_amount or 0.0) }}</strong> in reward balance instantly on confirmation!
           </p>
         </div>
 
