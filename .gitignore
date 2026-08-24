@@ -1,5 +1,17 @@
 .env
+.env.*
+!.env.example
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
+.coverage
+htmlcov/
+uploads/
+generated_tickets/
+*.log
+.DS_Store
+
+# Local Netlify folder
+.netlify

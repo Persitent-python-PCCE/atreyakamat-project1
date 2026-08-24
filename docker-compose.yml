@@ -1,0 +1,32 @@
+services:
+  web:
+    build: .
+    container_name: seatmeup-web
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - seatmeup-uploads:/app/uploads
+      - seatmeup-static-uploads:/app/static/uploads
+      - seatmeup-tickets:/app/static/generated_tickets
+    # Optional check: health monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  seatmeup-uploads:
+    driver: local
+  seatmeup-static-uploads:
+    driver: local
+  seatmeup-tickets:
+    driver: local

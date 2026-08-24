@@ -31,4 +31,4 @@ def index():
 @home_bp.route("/health")
 def health():
     """Simple health check endpoint."""
-    return {"status": "ok", "project": "SeatMeUp"}
+    return {"status": "ok", "service": "SeatMeUp"}

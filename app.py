@@ -1,8 +1,20 @@
+import os
+import logging
 from flask import Flask, jsonify, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
-from Config.config import DevelopmentConfig
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from Config.config import Config, DevelopmentConfig, ProductionConfig
+
+# Configure standard structured production logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("SeatMeUp")
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -34,13 +46,27 @@ def init_jwt_callbacks(jwt_manager):
 
 
 def init_db(app):
+    """Create database tables if needed (used in development / testing)."""
     with app.app_context():
         db.create_all()
 
 
-def create_app(config_class=DevelopmentConfig):
+def create_app(config_class=None):
+    """Application factory for SeatMeUp."""
+    if config_class is None:
+        env = os.environ.get("FLASK_ENV", os.environ.get("ENVIRONMENT", "development")).lower()
+        if env == "production":
+            config_class = ProductionConfig
+        else:
+            config_class = DevelopmentConfig
+
     app = Flask(__name__)
-    app.config.from_object(config_class)
+    
+    # Load configuration
+    if isinstance(config_class, type):
+        app.config.from_object(config_class())
+    else:
+        app.config.from_object(config_class)
 
     # Initialize extensions
     db.init_app(app)
@@ -49,6 +75,21 @@ def create_app(config_class=DevelopmentConfig):
 
     # Initialize CSRF Protection
     csrf.init_app(app)
+
+    # Apply ProxyFix for reverse proxies (Cloudflare Tunnel / Gunicorn) if enabled
+    if app.config.get("USE_PROXY_FIX"):
+        # x_for=1, x_proto=1, x_host=1, x_prefix=1 for trusted single-proxy reverse setups (Cloudflare Tunnel)
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+        logger.info("ProxyFix middleware enabled for reverse proxy / Cloudflare Tunnel.")
+
+    # Ensure runtime directories exist safely
+    runtime_dirs = [
+        os.path.join(app.root_path, "uploads"),
+        os.path.join(app.root_path, "static", "uploads"),
+        os.path.join(app.root_path, "static", "generated_tickets"),
+    ]
+    for rdir in runtime_dirs:
+        os.makedirs(rdir, exist_ok=True)
 
     # Initialize Swagger / OpenAPI documentation
     from Config.swagger_docs import init_swagger
@@ -75,7 +116,8 @@ def create_app(config_class=DevelopmentConfig):
     app.register_blueprint(web_customer_bp)
     app.register_blueprint(web_admin_bp)
 
-    # Error handlers for web & API requests
+
+    # Error handlers for web & API requests (secure, no stack traces leaked)
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
         if request.path.startswith("/api/") or request.is_json:
@@ -100,13 +142,17 @@ def create_app(config_class=DevelopmentConfig):
 
     @app.errorhandler(500)
     def handle_500(e):
+        logger.error("Internal server error encountered on path: %s", request.path)
         if request.path.startswith("/api/") or request.is_json:
             return jsonify({"success": False, "message": "Internal server error"}), 500
         return render_template("error.html", message="An unexpected error occurred. Please try again.", status_code=500), 500
 
+    logger.info("SeatMeUp application initialized successfully.")
     return app
 
 
+# Export application instance for WSGI servers (Gunicorn / Waitress)
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
     app.run(debug=True)
