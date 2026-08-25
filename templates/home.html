@@ -7,7 +7,7 @@
     <!-- Left Hero Column -->
     <div class="col-lg-7">
       <div class="d-inline-flex align-items-center gap-2 mb-2 px-3 py-1 rounded-pill" style="background: rgba(230, 74, 25, 0.09); border: 1px solid rgba(230, 74, 25, 0.2);">
-        <span class="fs-6">🎟️</span>
+        <i class="bi bi-ticket-perforated text-primary"></i>
         <span class="eyebrow" style="font-size: 0.76rem; letter-spacing: 0.08rem;">Smart Event Ticketing &amp; Seat Selection</span>
       </div>
 
@@ -44,10 +44,10 @@
         <p class="text-muted small mb-3">BOOK • ENJOY • EXPERIENCE</p>
         
         <div class="d-flex flex-wrap justify-content-center gap-2 pt-2 border-top">
-          <span class="badge-smu">💺 Real-time Seats</span>
-          <span class="badge-smu">⏳ 1-Min Hold</span>
-          <span class="badge-smu">🎁 2% Cashback</span>
-          <span class="badge-smu">📱 QR Gate Scan</span>
+          <span class="badge-smu"><i class="bi bi-grid-3x3 me-1"></i>Real-time Seats</span>
+          <span class="badge-smu"><i class="bi bi-stopwatch me-1"></i>1-Min Hold</span>
+          <span class="badge-smu"><i class="bi bi-gift me-1"></i>2% Cashback</span>
+          <span class="badge-smu"><i class="bi bi-qr-code me-1"></i>QR Gate Scan</span>
         </div>
       </div>
     </div>
@@ -67,7 +67,7 @@
   <div class="d-flex flex-wrap gap-2">
     {% for cat in categories %}
       <a href="/events?category={{ cat.name }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1.1rem; border-color: var(--border); color: var(--burgundy) !important; background: var(--surface) !important;">
-        🏷️ {{ cat.name }}
+        <i class="bi bi-tag me-1"></i>{{ cat.name }}
       </a>
     {% endfor %}
   </div>
@@ -92,8 +92,8 @@
             {% if event.poster %}
               <img src="{{ event.poster }}" class="card-img-top" alt="{{ event.title }}">
             {% else %}
-              <div class="rounded-top d-flex align-items-center justify-content-center text-white" style="height: 180px; background: var(--burgundy);">
-                <span class="fs-1">🎭</span>
+              <div class="rounded-top d-flex align-items-center justify-content-center text-white" style="height: 180px; background: linear-gradient(135deg, var(--burgundy), #3a0007);">
+                <i class="bi bi-calendar-event fs-1 text-white-50"></i>
               </div>
             {% endif %}
 
@@ -103,17 +103,17 @@
                 {% if event.status == 'published' %}
                   <span class="badge badge-published">Available</span>
                 {% else %}
-                  <span class="badge badge-draft text-capitalize">{{ event.status }}</span>
+                  <span class="badge bg-secondary text-capitalize">{{ event.status }}</span>
                 {% endif %}
               </div>
 
               <h5 class="fw-bold my-1 text-truncate" style="color: var(--burgundy);" title="{{ event.title }}">{{ event.title }}</h5>
 
               <p class="text-muted small mb-1">
-                📅 {{ event.event_date }} {% if event.start_time %}• ⏰ {{ event.start_time }}{% endif %}
+                <i class="bi bi-calendar3 me-1"></i>{{ event.event_date }} {% if event.start_time %}• <i class="bi bi-clock me-1 ms-1"></i>{{ event.start_time }}{% endif %}
               </p>
               <p class="text-muted small mb-2">
-                📍 {{ event.venue_name or 'Main Venue' }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}
+                <i class="bi bi-geo-alt me-1"></i>{{ event.venue_name or 'Main Venue' }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}
               </p>
               <p class="text-secondary small mb-3 flex-grow-1">
                 {{ event.description|truncate(80) if event.description else 'Join us for this exciting live event.' }}
@@ -133,7 +133,7 @@
     </div>
   {% else %}
     <div class="card p-5 text-center my-3">
-      <div class="empty-state-icon">🎟️</div>
+      <div class="empty-state-icon"><i class="bi bi-calendar-x"></i></div>
       <h4 class="text-muted mb-2">No upcoming events right now</h4>
       <p class="text-secondary small mb-3">Check back soon for new concerts, workshops, and live performances.</p>
       {% if current_user and current_user.role == 'admin' %}
@@ -195,42 +195,42 @@
   <div class="row row-cols-1 row-cols-md-3 g-4">
     <div class="col">
       <div class="metric-card h-100">
-        <div class="fs-3 mb-2 text-primary">💺</div>
+        <div class="fs-3 mb-2 text-primary"><i class="bi bi-grid-3x3"></i></div>
         <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Interactive Seat Maps</h6>
         <p class="text-muted small mb-0">Real-time visual seat grids for seated venues and simple quantity selection for general admission.</p>
       </div>
     </div>
     <div class="col">
       <div class="metric-card h-100">
-        <div class="fs-3 mb-2 text-primary">⏳</div>
+        <div class="fs-3 mb-2 text-primary"><i class="bi bi-stopwatch"></i></div>
         <h6 class="fw-bold mb-1" style="color: var(--burgundy);">1-Minute Concurrency Hold</h6>
         <p class="text-muted small mb-0">Lock your seats while completing checkout without worrying about double bookings.</p>
       </div>
     </div>
     <div class="col">
       <div class="metric-card h-100">
-        <div class="fs-3 mb-2 text-primary">📱</div>
+        <div class="fs-3 mb-2 text-primary"><i class="bi bi-qr-code"></i></div>
         <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Secure Digital Pass &amp; QR</h6>
         <p class="text-muted small mb-0">Fast door scanning with unique token security, anti-duplicate validation, and downloadable PDF tickets.</p>
       </div>
     </div>
     <div class="col">
       <div class="metric-card h-100">
-        <div class="fs-3 mb-2 text-primary">💰</div>
+        <div class="fs-3 mb-2 text-primary"><i class="bi bi-gift"></i></div>
         <h6 class="fw-bold mb-1" style="color: var(--burgundy);">2% Cashback Reward Wallet</h6>
         <p class="text-muted small mb-0">Earn 2% wallet balance on every confirmed booking automatically credited to your account.</p>
       </div>
     </div>
     <div class="col">
       <div class="metric-card h-100">
-        <div class="fs-3 mb-2 text-primary">🏷️</div>
+        <div class="fs-3 mb-2 text-primary"><i class="bi bi-percent"></i></div>
         <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Promo Codes &amp; Add-ons</h6>
         <p class="text-muted small mb-0">Apply percentage or fixed discount promo codes and bundle event merchandise or VIP perks.</p>
       </div>
     </div>
     <div class="col">
       <div class="metric-card h-100">
-        <div class="fs-3 mb-2 text-primary">🔄</div>
+        <div class="fs-3 mb-2 text-primary"><i class="bi bi-arrow-repeat"></i></div>
         <h6 class="fw-bold mb-1" style="color: var(--burgundy);">Easy Self-Service Management</h6>
         <p class="text-muted small mb-0">Track all your reservations, download receipts, and manage bookings anytime from your dashboard.</p>
       </div>

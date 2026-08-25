@@ -145,6 +145,37 @@ class TestEventSchemas:
             EventCreateRequestSchema().load(data)
         assert "base_price" in exc.value.messages
 
+    def test_event_schema_status_defaults_and_validation(self):
+        """WHY: Verifies status accepts only published/unpublished and defaults to unpublished."""
+        # Default when omitted
+        base_data = {
+            "title": "Jazz Fest",
+            "category_id": 1,
+            "venue_id": 1,
+            "event_date": "2026-09-15",
+            "start_time": "19:00",
+        }
+        loaded = EventCreateRequestSchema().load(base_data)
+        assert loaded["status"] == "unpublished"
+
+        # Explicit published
+        loaded_pub = EventCreateRequestSchema().load({**base_data, "status": "published"})
+        assert loaded_pub["status"] == "published"
+
+        # Explicit unpublished
+        loaded_unpub = EventCreateRequestSchema().load({**base_data, "status": "unpublished"})
+        assert loaded_unpub["status"] == "unpublished"
+
+        # Rejection of legacy / invalid statuses
+        for bad_status in ["draft", "cancelled", "completed", "active", "invalid"]:
+            with pytest.raises(ValidationError) as exc:
+                EventCreateRequestSchema().load({**base_data, "status": bad_status})
+            assert "status" in exc.value.messages
+
+            with pytest.raises(ValidationError) as exc2:
+                EventUpdateRequestSchema().load({"status": bad_status})
+            assert "status" in exc2.value.messages
+
 
 @pytest.mark.unit
 class TestVenueSchemas:

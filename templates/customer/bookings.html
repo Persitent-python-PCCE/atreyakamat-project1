@@ -7,7 +7,7 @@
       <h1 class="h2 fw-bold text-dark mb-1">My Bookings</h1>
       <p class="text-muted mb-0">View all your confirmed and past reservations</p>
     </div>
-    <a href="/events" class="btn btn-danger">Book New Event</a>
+    <a href="/events" class="btn btn-primary">Book New Event</a>
   </div>
 
   <div class="card shadow-sm border-0 bg-white p-4">
@@ -46,10 +46,10 @@
       </div>
     {% else %}
       <div class="text-center py-5 text-muted">
-        <div class="fs-1 mb-2">🎟️</div>
+        <div class="fs-1 mb-2 text-muted"><i class="bi bi-ticket-perforated"></i></div>
         <h5>No bookings found</h5>
         <p class="text-secondary small mb-3">You have not booked any event tickets yet.</p>
-        <a href="/events" class="btn btn-danger">Browse Events</a>
+        <a href="/events" class="btn btn-primary">Browse Events</a>
       </div>
     {% endif %}
   </div>

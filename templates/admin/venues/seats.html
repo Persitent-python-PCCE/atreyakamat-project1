@@ -3,27 +3,15 @@
 {% block content %}
 <div class="row my-4">
   <!-- Admin Sidebar -->
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 p-3">
-      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
-      <div class="nav flex-column nav-pills">
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
-        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/venues" style="border-radius: 8px; color: var(--white) !important;">📍 Venues</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
-      </div>
-    </div>
-  </div>
+  {% include "admin/_sidebar.html" %}
 
   <!-- Venue Seats Main View -->
   <div class="col-md-9">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold text-dark mb-1">💺 Seat Configuration: {{ venue.name }}</h2>
+        <h2 class="fw-bold text-dark mb-1"><i class="bi bi-grid-3x3 me-2"></i>Seat Configuration: {{ venue.name }}</h2>
         <p class="text-muted mb-0">
-          📍 {{ venue.address }}{% if venue.city %}, {{ venue.city }}{% endif %} • Capacity: <strong>{{ venue.capacity }}</strong>
+          <i class="bi bi-geo-alt me-1"></i>{{ venue.address }}{% if venue.city %}, {{ venue.city }}{% endif %} • Capacity: <strong>{{ venue.capacity }}</strong>
         </p>
       </div>
       <a href="/admin/venues" class="btn btn-secondary btn-sm">&larr; Back to Venues</a>
@@ -70,7 +58,7 @@
       <!-- 1. Bulk Seat Generator -->
       <div class="col-lg-7">
         <div class="card shadow-sm border-0 p-4 h-100 bg-white">
-          <h5 class="fw-bold mb-1" style="color: var(--burgundy);">⚡ Bulk Seat Generator</h5>
+          <h5 class="fw-bold mb-1" style="color: var(--burgundy);"><i class="bi bi-lightning-charge me-1"></i> Bulk Seat Generator</h5>
           <p class="text-muted small mb-3">Quickly generate rows (A, B, C...) and seat columns.</p>
 
           <form method="POST" action="/admin/venues/{{ venue.id }}/seats/generate">
@@ -105,7 +93,7 @@
       <!-- 2. Add Single Seat -->
       <div class="col-lg-5">
         <div class="card shadow-sm border-0 p-4 h-100 bg-white">
-          <h5 class="fw-bold mb-1" style="color: var(--burgundy);">➕ Add Single Seat</h5>
+          <h5 class="fw-bold mb-1" style="color: var(--burgundy);"><i class="bi bi-plus-circle me-1"></i> Add Single Seat</h5>
           <p class="text-muted small mb-3">Add individual VIP or custom seats.</p>
 
           <form method="POST" action="/admin/venues/{{ venue.id }}/seats/create">
@@ -149,7 +137,7 @@
         <!-- Visual Badges Map -->
         <div class="p-3 bg-light rounded text-center mb-4 border">
           <div class="p-2 mb-3 text-white fw-bold small rounded" style="background: #2b2d42; letter-spacing: 2px;">
-            🎭 STAGE / SCREEN DIRECTION 🎭
+            STAGE / SCREEN DIRECTION
           </div>
           <div class="d-flex flex-wrap justify-content-center gap-2" style="max-height: 240px; overflow-y: auto;">
             {% for s in seats %}
@@ -207,7 +195,7 @@
         </div>
       {% else %}
         <div class="text-center py-5">
-          <div class="display-4 text-muted mb-2">💺</div>
+          <div class="display-4 text-muted mb-2"><i class="bi bi-grid-3x3"></i></div>
           <h5 class="fw-bold text-dark">No Seats Configured Yet</h5>
           <p class="text-muted small mb-3">
             Events at this venue will show "No seats configured" until seats are generated.

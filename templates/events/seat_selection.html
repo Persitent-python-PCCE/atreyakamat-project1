@@ -19,8 +19,8 @@
         <span class="badge-smu mb-1">{{ event.category_name or 'Event' }}</span>
         <h2 class="fw-bold mb-1" style="color: var(--burgundy);">{{ event.title }}</h2>
         <p class="text-muted small mb-0">
-          📍 <strong>{{ venue.name if venue else (event.venue_name or 'Main Venue') }}</strong> •
-          📅 {{ event.event_date }} • ⏰ {{ event.start_time }}
+          <i class="bi bi-geo-alt me-1"></i><strong>{{ venue.name if venue else (event.venue_name or 'Main Venue') }}</strong> •
+          <i class="bi bi-calendar3 me-1 ms-1"></i>{{ event.event_date }} • <i class="bi bi-clock me-1 ms-1"></i>{{ event.start_time }}
         </p>
       </div>
       <div class="text-md-end">
@@ -36,7 +36,7 @@
       <div class="card shadow-sm border-0 p-4">
         <!-- Stage / Screen Banner -->
         <div class="text-center py-2 px-4 mb-4 rounded text-white fw-bold shadow-sm" style="background: var(--burgundy); letter-spacing: 0.15rem; font-size: 0.85rem;">
-          🎭 STAGE / SCREEN 🎭
+          STAGE / SCREEN
         </div>
 
         <!-- Legend -->
@@ -67,26 +67,26 @@
                 <div class="col text-center">
                   {% if s.status == 'available' %}
                     <!-- Available: click to hold -->
-                    <button type="button" class="seat-btn available w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="hold" title="Seat {{ s.seat_number }} (₹{{ '%.2f'|format(s.price) }})">
+                    <button type="button" class="seat-btn available w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="hold" title="Seat {{ s.seat_number }}: {{ s.availability_reason or 'Available' }} (₹{{ '%.2f'|format(s.price) }})">
                       <div class="seat-num">{{ s.seat_number }}</div>
                       <div class="seat-price">₹{{ "%.2f"|format(s.price) }}</div>
                     </button>
                   {% elif s.status == 'held_by_me' %}
                     <!-- Held by Me: click to release -->
-                    <button type="button" class="seat-btn held-by-me w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="release" data-remaining="{{ s.hold.remaining_seconds if s.hold else 60 }}" title="Held by you — Click to deselect">
-                      <div class="seat-num">✓ {{ s.seat_number }}</div>
+                    <button type="button" class="seat-btn held-by-me w-100" data-seat-id="{{ s.id }}" data-event-id="{{ event.id }}" data-action="release" data-remaining="{{ s.hold.remaining_seconds if s.hold else 60 }}" title="Seat {{ s.seat_number }}: {{ s.availability_reason or 'Held by you' }}">
+                      <div class="seat-num">{{ s.seat_number }}</div>
                       <div class="seat-timer" id="timer-seat-{{ s.id }}">{{ s.hold.remaining_seconds if s.hold else 60 }}s</div>
                     </button>
                   {% elif s.status == 'held' %}
                     <!-- Held by other -->
-                    <button type="button" class="seat-btn held w-100" disabled title="Currently held by another user">
-                      <div class="seat-num">⏳ {{ s.seat_number }}</div>
+                    <button type="button" class="seat-btn held w-100" disabled title="Seat {{ s.seat_number }}: {{ s.availability_reason or 'Held temporarily' }}">
+                      <div class="seat-num">{{ s.seat_number }}</div>
                       <div class="seat-price">Held</div>
                     </button>
                   {% elif s.status == 'booked' %}
                     <!-- Booked -->
-                    <button type="button" class="seat-btn booked w-100" disabled title="Already booked">
-                      <div class="seat-num">✕ {{ s.seat_number }}</div>
+                    <button type="button" class="seat-btn booked w-100" disabled title="Seat {{ s.seat_number }}: {{ s.availability_reason or 'Already booked' }}">
+                      <div class="seat-num">{{ s.seat_number }}</div>
                       <div class="seat-price">Sold</div>
                     </button>
                   {% endif %}

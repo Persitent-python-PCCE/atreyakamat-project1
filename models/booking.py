@@ -14,6 +14,7 @@ class Booking(BaseModel):
     total_amount = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
     discount_amount = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
     cashback_amount = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
+    idempotency_key = db.Column(db.String(128), nullable=True, unique=True, index=True)
     status = db.Column(db.String(20), nullable=False, default="pending")
     booked_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     cancelled_at = db.Column(db.DateTime, nullable=True)

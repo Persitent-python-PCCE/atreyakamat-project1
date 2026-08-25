@@ -77,6 +77,10 @@ class BookingService:
         event = self.event_dao.get_event_by_id(event_id)
         if event is None:
             return fail("Event not found", 404)
+        if event.status != "published":
+            return fail("Event is not available for booking", 400)
+        if not event.booking_open:
+            return fail("Booking is currently closed for this event", 400)
 
         user = self.user_dao.get_user_by_id(user_id)
         if user is None:
@@ -245,12 +249,32 @@ class BookingService:
         selected_addons: dict | list | None = None,
         promo_code: str | None = None,
         quantity: int | None = None,
+        idempotency_key: str | None = None,
     ) -> dict:
         """Confirm order, deduct holds, create Booking, Items, Addons, PromoUsage, RewardTransaction, and Ticket in one atomic transaction."""
+        # Step 0: Check Idempotency Key
+        clean_idempotency_key = (idempotency_key or "").strip() or None
+        if clean_idempotency_key:
+            existing = self.booking_dao.get_booking_by_idempotency_key(clean_idempotency_key)
+            if existing:
+                if existing.user_id != user_id:
+                    return fail("Idempotency key does not belong to the authenticated user", 403)
+                b_details = self.get_booking_by_reference(existing.booking_reference)
+                replay_data = dict(b_details["data"]) if b_details.get("success") else {}
+                replay_data["booking_id"] = existing.id
+                replay_data["booking_reference"] = existing.booking_reference
+                replay_data["total_amount"] = float(existing.total_amount)
+                replay_data["status"] = existing.status
+                return ok("Booking confirmed (idempotent replay)", replay_data, status=200)
+
         # Step 1: Validate Event & User
         event = self.event_dao.get_event_by_id(event_id)
         if event is None:
             return fail("Event not found", 404)
+        if event.status != "published":
+            return fail("Event is not available for booking", 400)
+        if not event.booking_open:
+            return fail("Booking is currently closed for this event", 400)
 
         user = self.user_dao.get_user_by_id(user_id)
         if user is None:
@@ -386,6 +410,7 @@ class BookingService:
                 total_amount=final_amount,
                 discount_amount=discount_amount,
                 cashback_amount=cashback_amount,
+                idempotency_key=clean_idempotency_key,
                 status="confirmed",
                 booked_at=datetime.utcnow(),
             )
@@ -411,24 +436,30 @@ class BookingService:
                     seat_id=None,
                     item_type="general_admission",
                     quantity=ga_quantity,
-                    unit_price=float(event.base_price or 0.0),
+                    unit_price=event.base_price or 0.0,
                     total_price=ticket_subtotal,
                 )
                 db.session.add(b_item)
 
-            # 5c. Create BookingAddon for each selected addon
-            for addon, qty, unit_p, tot_p in addon_records_to_create:
+            # 5c. Create BookingAddon(s)
+            for addon_obj, addon_qty, _, _ in addon_records_to_create:
                 b_addon = BookingAddon(
                     booking_id=booking.id,
-                    addon_id=addon.id,
-                    quantity=qty,
-                    unit_price=unit_p,
-                    total_price=tot_p,
+                    addon_id=addon_obj.id,
+                    quantity=addon_qty,
+                    unit_price=addon_obj.price,
+                    total_price=round(float(addon_obj.price) * addon_qty, 2),
                 )
                 db.session.add(b_addon)
 
-            # 5d. Record PromoCodeUsage & bump count if promo used
+            # 5d. Consume Holds
+            if event.requires_seats:
+                for hold, _, _ in held_seats:
+                    hold.status = "consumed"
+
+            # 5e. Record Promo Code Usage
             if promo and discount_amount > 0:
+                promo.used_count = (promo.used_count or 0) + 1
                 usage = PromoCodeUsage(
                     promo_code_id=promo.id,
                     user_id=user_id,
@@ -436,31 +467,24 @@ class BookingService:
                     discount_amount=discount_amount,
                     used_at=datetime.utcnow(),
                 )
-                promo.used_count = (promo.used_count or 0) + 1
                 db.session.add(usage)
 
-            # 5e. Record RewardTransaction & Credit 2% Cashback to user balance
+            # 5f. Credit 2% Cashback to Customer Wallet & Log Transaction
             if cashback_amount > 0:
+                user.reward_balance = round(float(user.reward_balance or 0.0) + cashback_amount, 2)
                 reward_tx = RewardTransaction(
                     user_id=user_id,
                     booking_id=booking.id,
                     transaction_type="cashback",
                     amount=cashback_amount,
-                    description=f"2% Cashback reward for booking {booking_ref}",
+                    description=f"2% cashback reward for booking {booking.booking_reference}",
                     created_at=datetime.utcnow(),
                 )
-                current_reward = float(user.reward_balance or 0.0)
-                user.reward_balance = round(current_reward + cashback_amount, 2)
                 db.session.add(reward_tx)
 
-            # 5f. Convert SeatHold records into consumed state (if seated)
-            for hold, _, _ in held_seats:
-                hold.status = "consumed"
-                db.session.add(hold)
-
-            # 5g. Create unique Ticket for this confirmed booking
-            ticket_token = "TKT-" + uuid.uuid4().hex[:16].upper()
-            qr_data = f"/verify/{ticket_token}"
+            # 5g. Generate Digital Ticket with UUID token and QR data
+            ticket_token = f"TKT-{uuid.uuid4().hex[:12].upper()}"
+            qr_data = f"SEATMEUP:{booking.booking_reference}:{ticket_token}"
             ticket = Ticket(
                 booking_id=booking.id,
                 ticket_token=ticket_token,
@@ -473,8 +497,25 @@ class BookingService:
             # Commit the entire transaction atomically!
             db.session.commit()
 
+            # Invalidate analytics cache
+            try:
+                from Services.cache_service import invalidate_analytics_cache
+                invalidate_analytics_cache()
+            except Exception:
+                pass
         except Exception as e:
             db.session.rollback()
+            if clean_idempotency_key:
+                existing = self.booking_dao.get_booking_by_idempotency_key(clean_idempotency_key)
+                if existing and existing.user_id == user_id:
+                    b_details = self.get_booking_by_reference(existing.booking_reference)
+                    replay_data = b_details["data"] if b_details.get("success") else {
+                        "booking_id": existing.id,
+                        "booking_reference": existing.booking_reference,
+                        "total_amount": float(existing.total_amount),
+                        "status": existing.status,
+                    }
+                    return ok("Booking confirmed (idempotent replay)", replay_data, status=200)
             return fail(f"Booking transaction failed: {str(e)}", 500)
 
         # Step 6: Dispatch confirmation email via EmailService (failure does NOT invalidate booking)
@@ -650,6 +691,13 @@ class BookingService:
             db.session.add(notif)
 
             db.session.commit()
+
+            # Invalidate analytics cache
+            try:
+                from Services.cache_service import invalidate_analytics_cache
+                invalidate_analytics_cache()
+            except Exception:
+                pass
         except Exception as e:
             db.session.rollback()
             return fail(f"Could not cancel booking: {str(e)}", 500)

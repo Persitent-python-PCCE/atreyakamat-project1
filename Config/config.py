@@ -49,6 +49,11 @@ class Config:
     JWT_COOKIE_SECURE = False
     WTF_CSRF_SSL_STRICT = False
 
+    # Uploads Configuration
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 5 * 1024 * 1024))
+    UPLOAD_FOLDER = os.path.join(str(BASE_DIR), "static", "uploads")
+    ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
 
 class DevelopmentConfig(Config):
     """Development environment configuration."""

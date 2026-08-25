@@ -3,19 +3,7 @@
 {% block content %}
 <div class="row my-4">
   <!-- Admin Sidebar -->
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 p-3">
-      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
-      <div class="nav flex-column nav-pills">
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
-        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/events" style="border-radius: 8px; color: var(--white) !important;">🎭 Events</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
-      </div>
-    </div>
-  </div>
+  {% include "admin/_sidebar.html" %}
 
   <!-- Reschedule Main Form Area -->
   <div class="col-md-9">
@@ -31,7 +19,48 @@
       <!-- Flash / Error Alerts -->
       {% if error %}
         <div class="alert alert-danger py-2 small mb-3" role="alert">
-          {{ error }}
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error }}
+        </div>
+      {% endif %}
+
+      <!-- Rescheduling Recovery Workflow Summary -->
+      {% if summary %}
+        <div class="card border-success shadow-sm p-4 mb-4" style="background: #f4faf6;">
+          <div class="d-flex align-items-center gap-2 mb-3 text-success">
+            <i class="bi bi-check-circle-fill fs-4"></i>
+            <h4 class="fw-bold mb-0">Event Rescheduled Successfully</h4>
+          </div>
+          <div class="row g-3 text-dark mb-3">
+            <div class="col-sm-6 col-md-3">
+              <span class="text-muted small d-block">Original Schedule</span>
+              <strong>{{ summary.old_event_date }} &bull; {{ summary.old_start_time }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <span class="text-muted small d-block">New Schedule</span>
+              <strong class="text-success">{{ summary.new_event_date }} &bull; {{ summary.new_start_time }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-2">
+              <span class="text-muted small d-block">Customers Notified</span>
+              <strong class="fs-6 text-primary">{{ summary.customers_notified }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-2">
+              <span class="text-muted small d-block">Tickets Updated</span>
+              <strong class="fs-6 text-primary">{{ summary.tickets_updated }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-2">
+              <span class="text-muted small d-block">Audit Recorded</span>
+              <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Yes</span>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+            <span class="small text-muted">
+              <i class="bi bi-envelope-check me-1 text-success"></i>
+              Email Dispatch: <strong>{{ summary.email_status or 'Sent' }}</strong>
+            </span>
+            <a href="/admin/events/{{ event.id }}/operations" class="btn btn-sm btn-success">
+              <i class="bi bi-speedometer2 me-1"></i>Go to Event Operations &rarr;
+            </a>
+          </div>
         </div>
       {% endif %}
 
@@ -82,7 +111,7 @@
 
         <!-- Admin Password Confirmation -->
         <div class="p-3 rounded mb-4" style="background: #fff8f7; border: 1px solid #fedcd7;">
-          <label for="password" class="form-label fw-bold text-danger">🔒 Confirm Admin Password *</label>
+          <label for="password" class="form-label fw-bold text-danger"><i class="bi bi-shield-lock-fill me-1"></i>Confirm Admin Password *</label>
           <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your admin account password to confirm reschedule">
           <small class="text-muted">Security verification required before altering event dates and notifying customers.</small>
         </div>

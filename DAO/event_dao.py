@@ -30,36 +30,40 @@ class EventDAO:
         return db.session.get(Event, event_id)
 
     def get_all_events(self) -> list[Event]:
-        """Return every event in the database."""
+        """Return every event in the database (Admin/internal use)."""
         return Event.query.all()
 
+    def get_published_events(self) -> list[Event]:
+        """Return only published events for public listing."""
+        return Event.query.filter_by(status="published").all()
+
     def get_upcoming_events(self) -> list[Event]:
-        """Return events whose event_date is in the future or today."""
+        """Return published events whose event_date is in the future or today."""
         now = datetime.utcnow()
         return (
             Event.query
-            .filter(Event.event_date >= now.date())
+            .filter(Event.status == "published", Event.event_date >= now.date())
             .order_by(Event.event_date.asc())
             .all()
         )
 
     def get_events_by_category(self, category_id: int) -> list[Event]:
-        """Return all events that belong to a given category id."""
-        return Event.query.filter_by(category_id=category_id).all()
+        """Return published events that belong to a given category id."""
+        return Event.query.filter_by(category_id=category_id, status="published").all()
 
     def get_events_by_category_name(self, category_name: str) -> list[Event]:
-        """Return all events that belong to a category name (e.g. 'Music', 'Dining')."""
+        """Return published events that belong to a category name."""
         if not category_name or not category_name.strip():
             return []
         return (
             Event.query
             .join(Event.category)
-            .filter(Category.name.ilike(category_name.strip()))
+            .filter(Category.name.ilike(category_name.strip()), Event.status == "published")
             .all()
         )
 
     def search_events(self, search_term: str) -> list[Event]:
-        """Return events whose title, description, or category matches the search term."""
+        """Return published events whose title, description, or category matches search term."""
         if not search_term or not search_term.strip():
             return []
         pattern = f"%{search_term.strip()}%"
@@ -67,9 +71,12 @@ class EventDAO:
             Event.query
             .outerjoin(Event.category)
             .filter(
-                Event.title.ilike(pattern) |
-                Event.description.ilike(pattern) |
-                Category.name.ilike(pattern)
+                Event.status == "published",
+                (
+                    Event.title.ilike(pattern) |
+                    Event.description.ilike(pattern) |
+                    Category.name.ilike(pattern)
+                )
             )
             .all()
         )

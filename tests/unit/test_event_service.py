@@ -2,7 +2,7 @@
 #
 # Pure unit tests for EventService with mocked DAOs.
 # WHY: Event lifecycle encompasses creation, validation of foreign keys (category, venue, creator),
-# status transitions ('draft' -> 'published'), and search/filtering.
+# status transitions ('unpublished' -> 'published'), and search/filtering.
 
 import pytest
 from unittest.mock import MagicMock
@@ -44,7 +44,7 @@ class TestEventService:
             event_date=date.today() + timedelta(days=5),
             start_time="19:00",
             base_price=50.00,
-            status="draft",
+            status="unpublished",
         )
         self.mock_event_dao.create_event.return_value = fake_ev
 
@@ -60,6 +60,27 @@ class TestEventService:
         assert res["success"] is True
         assert res["status"] == 201
         assert res["data"]["title"] == "Rock Festival"
+        assert res["data"]["status"] == "unpublished"
+
+    def test_create_event_invalid_status_fails(self):
+        """WHY: Status other than 'published' or 'unpublished' is rejected."""
+        self.mock_cat_dao.get_category_by_id.return_value = Category(id=1, name="Music")
+        self.mock_venue_dao.get_venue_by_id.return_value = Venue(id=2, name="Hall")
+        self.mock_user_dao.get_user_by_id.return_value = User(id=1, name="Admin")
+
+        for bad_status in ["draft", "cancelled", "completed", "random"]:
+            res = self.event_service.create_event({
+                "title": "Rock Festival",
+                "category_id": 1,
+                "venue_id": 2,
+                "created_by": 1,
+                "event_date": str(date.today() + timedelta(days=5)),
+                "start_time": "19:00",
+                "status": bad_status,
+            })
+            assert res["success"] is False
+            assert res["status"] == 400
+            assert "Invalid event status" in res["message"]
 
     def test_create_event_invalid_category_fails(self):
         """WHY: Creating event under non-existent category returns 404 Not Found."""
@@ -93,15 +114,25 @@ class TestEventService:
         assert res["status"] == 404
         assert "Venue" in res["message"]
 
-    def test_publish_event_status_transition(self):
-        """WHY: Publishing an event flips status from 'draft' to 'published'."""
-        fake_ev = Event(id=5, title="Draft Event", status="draft")
+    def test_publish_and_unpublish_status_transition(self):
+        """WHY: Publishing and unpublishing flips status strictly between 'unpublished' and 'published'."""
+        fake_ev = Event(id=5, title="Test Event", status="unpublished")
         self.mock_event_dao.get_event_by_id.return_value = fake_ev
 
+        # Publish
         res = self.event_service.update_event(5, {"status": "published"})
         assert res["success"] is True
         assert fake_ev.status == "published"
-        self.mock_event_dao.update_event.assert_called_once_with(fake_ev)
+
+        # Unpublish
+        res2 = self.event_service.update_event(5, {"status": "unpublished"})
+        assert res2["success"] is True
+        assert fake_ev.status == "unpublished"
+
+        # Invalid update rejected
+        res3 = self.event_service.update_event(5, {"status": "draft"})
+        assert res3["success"] is False
+        assert res3["status"] == 400
 
     def test_search_events(self):
         """WHY: Event search delegates query parameters to DAO and returns results."""

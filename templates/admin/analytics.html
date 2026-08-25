@@ -3,19 +3,7 @@
 {% block content %}
 <div class="row my-4">
   <!-- Admin Sidebar -->
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 p-3">
-      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
-      <div class="nav flex-column nav-pills">
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/events">🎭 Events</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
-        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/analytics" style="border-radius: 8px; color: var(--white) !important;">📈 Analytics</a>
-      </div>
-    </div>
-  </div>
+  {% include "admin/_sidebar.html" %}
 
   <!-- Analytics Main Dashboard Area -->
   <div class="col-md-9">
@@ -40,28 +28,34 @@
       </div>
     </div>
 
-    <!-- 6 Primary Summary Metric Cards -->
+    <!-- Summary Metric Cards -->
     <div class="row g-3 mb-4">
       <!-- 1. Total Revenue -->
-      <div class="col-sm-6 col-xl-4">
+      <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid var(--primary) !important;">
           <span class="text-muted small text-uppercase fw-semibold">Total Revenue</span>
           <h2 class="fw-bold my-2" style="color: var(--primary);">₹{{ "%.2f"|format(summary.total_revenue or 0.0) }}</h2>
-          <span class="small text-muted">Avg Order Value: <strong>₹{{ "%.2f"|format(summary.average_booking_value or 0.0) }}</strong></span>
+          <span class="small text-muted">Avg Order: <strong>₹{{ "%.2f"|format(summary.average_booking_value or 0.0) }}</strong></span>
         </div>
       </div>
 
       <!-- 2. Tickets Sold -->
-      <div class="col-sm-6 col-xl-4">
+      <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid #28a745 !important;">
           <span class="text-muted small text-uppercase fw-semibold">Tickets Sold</span>
           <h2 class="fw-bold my-2 text-dark">{{ summary.tickets_sold or 0 }}</h2>
-          <span class="small text-muted">Across all confirmed orders</span>
+          <span class="small text-muted">
+            {% if summary.tickets_by_type %}
+              {{ summary.tickets_by_type.seated or 0 }} Seated • {{ summary.tickets_by_type.general_admission or 0 }} GA
+            {% else %}
+              Confirmed tickets
+            {% endif %}
+          </span>
         </div>
       </div>
 
       <!-- 3. Total Bookings -->
-      <div class="col-sm-6 col-xl-4">
+      <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 p-3 h-100" style="border-left: 4px solid var(--burgundy) !important;">
           <span class="text-muted small text-uppercase fw-semibold">Total Bookings</span>
           <h2 class="fw-bold my-2" style="color: var(--burgundy);">{{ summary.total_bookings or 0 }}</h2>
@@ -69,30 +63,51 @@
         </div>
       </div>
 
-      <!-- 4. Total Events -->
-      <div class="col-sm-6 col-xl-4">
+      <!-- 4. Registered Customers -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 p-3 h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Registered Users</span>
+          <h3 class="fw-bold my-2" style="color: var(--burgundy);">{{ summary.registered_customers or summary.total_users or 0 }}</h3>
+          <span class="small text-muted">Active accounts</span>
+        </div>
+      </div>
+
+      <!-- 5. Total Events & Status Splits -->
+      <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 p-3 h-100">
           <span class="text-muted small text-uppercase fw-semibold">Total Events</span>
           <h3 class="fw-bold my-2" style="color: var(--burgundy);">{{ summary.total_events or 0 }}</h3>
-          <span class="small text-muted">All catalogued events</span>
+          <span class="small text-muted">
+            <span class="badge bg-success" style="font-size: 0.7rem;">{{ summary.published_events or 0 }} Published</span>
+            <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">{{ summary.unpublished_events or 0 }} Unpublished</span>
+          </span>
         </div>
       </div>
 
-      <!-- 5. Active / Upcoming Events -->
-      <div class="col-sm-6 col-xl-4">
+      <!-- 6. Gate Attendance & No-Shows -->
+      <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 p-3 h-100">
-          <span class="text-muted small text-uppercase fw-semibold">Active &amp; Upcoming</span>
-          <h3 class="fw-bold my-2 text-success">{{ summary.active_events or 0 }}</h3>
-          <span class="small text-muted">Published for booking</span>
+          <span class="text-muted small text-uppercase fw-semibold">Gate Attendance</span>
+          <h3 class="fw-bold my-2 text-success">{{ summary.checked_in_tickets or 0 }} Checked In</h3>
+          <span class="small text-muted">{{ summary.total_no_shows or 0 }} No-Shows ({{ summary.no_show_rate or 0.0 }}%)</span>
         </div>
       </div>
 
-      <!-- 6. Cashback Disbursed -->
-      <div class="col-sm-6 col-xl-4">
+      <!-- 7. Seat Holds State -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 p-3 h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Seat Holds (Live)</span>
+          <h3 class="fw-bold my-2 text-dark">{{ summary.active_holds or 0 }} Active</h3>
+          <span class="small text-muted">{{ summary.expired_holds_today or 0 }} Expired Today</span>
+        </div>
+      </div>
+
+      <!-- 8. Cashback Disbursed -->
+      <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 p-3 h-100">
           <span class="text-muted small text-uppercase fw-semibold">2% Cashback Given</span>
-          <h3 class="fw-bold my-2 text-success">+₹{{ "%.2f"|format(summary.cashback_given or 0.0) }}</h3>
-          <span class="small text-muted">User wallet rewards</span>
+          <h3 class="fw-bold my-2 text-primary">+₹{{ "%.2f"|format(summary.cashback_given or 0.0) }}</h3>
+          <span class="small text-muted">User rewards credited</span>
         </div>
       </div>
     </div>
@@ -118,6 +133,7 @@
                 <th class="text-center">Bookings</th>
                 <th class="text-center">Occupancy</th>
                 <th class="text-end">Revenue</th>
+                <th class="text-end">Operations</th>
               </tr>
             </thead>
             <tbody>
@@ -135,15 +151,20 @@
                     {% if ev.venue_capacity > 0 %}
                       <div class="d-flex align-items-center justify-content-center gap-1">
                         <div class="progress flex-grow-1" style="height: 6px; min-width: 50px;">
-                          <div class="progress-bar bg-success" role="progressbar" style="width: {{ [ev.occupancy_rate, 100]|min }}%;"></div>
+                          <div class="progress-bar bg-primary" role="progressbar" style="width: {{ ev.occupancy_rate }}%;"></div>
                         </div>
-                        <small class="fw-semibold">{{ ev.occupancy_rate }}%</small>
+                        <small class="text-muted">{{ ev.occupancy_rate }}%</small>
                       </div>
                     {% else %}
-                      <span class="text-muted small">—</span>
+                      <span class="text-muted small">N/A</span>
                     {% endif %}
                   </td>
                   <td class="text-end fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(ev.revenue) }}</td>
+                  <td class="text-end">
+                    <a href="/admin/events/{{ ev.id }}/operations" class="btn btn-sm btn-outline-info">
+                      <i class="bi bi-speedometer2 me-1"></i>Ops
+                    </a>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>

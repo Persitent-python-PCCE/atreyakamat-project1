@@ -484,7 +484,7 @@ a:hover {
   border-radius: var(--radius-xs);
 }
 
-.badge-used, .badge-draft {
+.badge-used, .badge-unpublished {
   background-color: #f3f4f6;
   color: #4b5563;
   border: 1px solid #e5e7eb;

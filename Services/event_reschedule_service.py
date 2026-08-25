@@ -92,9 +92,6 @@ class EventRescheduleService:
         if not event:
             return fail("Event not found", 404)
 
-        if event.status == "cancelled":
-            return fail("Cannot reschedule a cancelled event.", 400)
-
         # 3. Parse & Validate New Schedule
         parsed_new_date = _parse_date(new_event_date)
         parsed_new_start_time = _parse_time(new_start_time)

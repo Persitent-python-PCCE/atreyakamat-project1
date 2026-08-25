@@ -17,6 +17,7 @@ class CheckoutConfirmRequestSchema(Schema):
     promo_code = fields.String(required=False, allow_none=True)
     selected_addons = fields.Dict(required=False)
     quantity = fields.Integer(required=False, allow_none=True, validate=validate.Range(min=1))
+    idempotency_key = fields.String(required=False, allow_none=True)
 
 
 class BookingResponseSchema(Schema):
@@ -27,6 +28,7 @@ class BookingResponseSchema(Schema):
     total_amount = fields.Float()
     discount_amount = fields.Float()
     cashback_amount = fields.Float()
+    idempotency_key = fields.String(allow_none=True)
     status = fields.String()
     booked_at = fields.DateTime(allow_none=True)
     cancelled_at = fields.DateTime(allow_none=True)

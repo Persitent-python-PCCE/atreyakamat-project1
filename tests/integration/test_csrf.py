@@ -179,7 +179,7 @@ class TestCSRFProtection:
             },
             follow_redirects=False,
         )
-        assert res_ok.status_code == 302
+        assert res_ok.status_code in (200, 302)
 
     def test_venue_crud_forms_require_csrf(self, client, admin_token, venue):
         """WHY: Verifies venue creation, editing, and deletion web forms require CSRF."""

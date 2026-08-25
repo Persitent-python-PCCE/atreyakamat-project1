@@ -18,7 +18,7 @@
   <!-- Flash / Error messages -->
   {% if error %}
     <div class="alert alert-danger py-2 small mb-3" role="alert">
-      ⚠️ {{ error }}
+      {{ error }}
     </div>
   {% endif %}
 
@@ -32,16 +32,16 @@
             {% if event.requires_seats %}1. Selected Seats{% else %}1. General Admission{% endif %}
           </h4>
           {% if event.requires_seats %}
-            <span class="badge bg-warning text-dark">⏳ 1-Min Hold Active</span>
+            <span class="badge bg-warning text-dark"><i class="bi bi-stopwatch me-1"></i> 1-Min Hold Active</span>
           {% else %}
-            <span class="badge bg-info text-dark">🎟️ General Admission</span>
+            <span class="badge bg-info text-dark"><i class="bi bi-ticket-perforated me-1"></i> General Admission</span>
           {% endif %}
         </div>
 
         <div class="mb-3">
           <h5 class="fw-bold mb-1" style="color: var(--burgundy);">{{ event.title }}</h5>
           <p class="text-muted small mb-0">
-            📅 {{ event.event_date }} • ⏰ {{ event.start_time }}
+            <i class="bi bi-calendar3 me-1"></i> {{ event.event_date }} • <i class="bi bi-clock me-1 ms-1"></i> {{ event.start_time }}
           </p>
         </div>
 
@@ -60,7 +60,7 @@
               <tbody>
                 {% for s in checkout.held_seats %}
                   <tr>
-                    <td><strong>💺 {{ s.seat_number }}</strong></td>
+                    <td><strong>{{ s.seat_number }}</strong></td>
                     <td class="text-muted small">{{ s.section_name }}</td>
                     <td><span class="badge-smu text-capitalize">{{ s.seat_type }}</span></td>
                     <td class="text-end fw-bold">₹{{ "%.2f"|format(s.price) }}</td>
@@ -160,11 +160,11 @@
 
         {% if checkout.discount_amount and checkout.discount_amount > 0 %}
           <div class="alert alert-success py-2 small mt-3 mb-0" role="alert">
-            ✓ <strong>{{ checkout.promo_code }}</strong> applied! You saved ₹{{ "%.2f"|format(checkout.discount_amount) }}
+            <i class="bi bi-check-circle-fill me-1"></i> <strong>{{ checkout.promo_code }}</strong> applied! You saved ₹{{ "%.2f"|format(checkout.discount_amount) }}
           </div>
         {% elif checkout.promo_error %}
           <div class="alert alert-danger py-2 small mt-3 mb-0" role="alert">
-            ✕ {{ checkout.promo_error }}
+            <i class="bi bi-exclamation-circle-fill me-1"></i> {{ checkout.promo_error }}
           </div>
         {% endif %}
       </div>
@@ -206,7 +206,7 @@
         <!-- 2% Cashback Reward Highlight -->
         <div class="p-3 rounded mb-4" style="background: rgba(245, 72, 40, 0.08); border: 1px dashed var(--primary);">
           <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="fs-5">🎁</span>
+            <i class="bi bi-gift fs-5" style="color: var(--primary);"></i>
             <strong style="color: var(--primary);">2% Cashback Reward</strong>
           </div>
           <p class="small text-secondary mb-0">
@@ -218,6 +218,7 @@
         <form method="POST" action="/events/{{ event.id }}/checkout">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <input type="hidden" name="action" value="confirm_booking">
+          <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
           {% if not event.requires_seats %}
             <input type="hidden" name="quantity" value="{{ quantity or 1 }}">
           {% endif %}
@@ -231,7 +232,7 @@
           {% endfor %}
 
           <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-6 shadow-sm">
-            Confirm &amp; Complete Booking 🎟️
+            Confirm Booking
           </button>
         </form>
 

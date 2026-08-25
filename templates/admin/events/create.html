@@ -3,19 +3,7 @@
 {% block content %}
 <div class="row my-4">
   <!-- Admin Sidebar -->
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 p-3">
-      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
-      <div class="nav flex-column nav-pills">
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
-        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/events" style="border-radius: 8px; color: var(--white) !important;">🎭 Events</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
-      </div>
-    </div>
-  </div>
+  {% include "admin/_sidebar.html" %}
 
   <!-- Create Event Form -->
   <div class="col-md-9">
@@ -31,7 +19,7 @@
         </div>
       {% endif %}
 
-      <form method="POST" action="/admin/events/create">
+      <form method="POST" action="/admin/events/create" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <!-- Title -->
         <div class="mb-3">
@@ -86,14 +74,17 @@
           <div class="col-md-4 mb-3 mb-md-0">
             <label for="status" class="form-label fw-semibold">Status *</label>
             <select class="form-select" id="status" name="status">
-              <option value="published" selected>Published</option>
-              <option value="draft">Draft</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="unpublished" {% if request.form and request.form.get('status') == 'unpublished' %}selected{% elif not request.form %}selected{% endif %}>Unpublished</option>
+              <option value="published" {% if request.form and request.form.get('status') == 'published' %}selected{% endif %}>Published</option>
             </select>
           </div>
           <div class="col-md-4">
             <label for="poster" class="form-label fw-semibold">Poster Image URL (Optional)</label>
             <input type="text" class="form-control" id="poster" name="poster" placeholder="https://example.com/poster.jpg" value="{{ request.form.get('poster', '') if request.form else '' }}">
+            <div class="mt-2">
+              <label for="poster_file" class="form-label fw-semibold mb-1">Or Upload Local Image</label>
+              <input type="file" class="form-control form-control-sm" id="poster_file" name="poster_file" accept=".jpg,.jpeg,.png,.webp">
+            </div>
           </div>
         </div>
 

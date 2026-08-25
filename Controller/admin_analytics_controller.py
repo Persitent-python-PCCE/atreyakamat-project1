@@ -31,6 +31,21 @@ def get_admin_analytics():
     return jsonify(result), result.get("status", 200)
 
 
+@admin_analytics_bp.get("/events/<int:event_id>/operations")
+@jwt_required()
+def get_event_operations_api(event_id):
+    """Retrieve full real-time event operations dashboard (Admin only)."""
+    jwt_claims = get_jwt()
+    if jwt_claims.get("role") != "admin":
+        return jsonify({
+            "success": False,
+            "message": "Admin access required",
+        }), 403
+
+    result = analytics_service.get_event_operations(event_id)
+    return jsonify(result), result.get("status", 200)
+
+
 from api.schemas import (
     EventRescheduleRequestSchema,
     EventCreateRequestSchema,

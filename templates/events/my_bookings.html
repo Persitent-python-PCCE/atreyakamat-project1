@@ -62,8 +62,8 @@
                 <td>
                   <div class="d-flex gap-1 align-items-center">
                     {% if b.status != 'cancelled' %}
-                      <a href="/bookings/{{ b.booking_reference }}/ticket" class="btn btn-sm btn-primary" title="View &amp; Scan Ticket">🎟️ Ticket</a>
-                      <a href="/bookings/{{ b.booking_reference }}/ticket/pdf" class="btn btn-sm btn-outline-primary" title="Download PDF Ticket">📥 PDF</a>
+                      <a href="/bookings/{{ b.booking_reference }}/ticket" class="btn btn-sm btn-primary" title="View &amp; Scan Ticket">Ticket</a>
+                      <a href="/bookings/{{ b.booking_reference }}/ticket/pdf" class="btn btn-sm btn-outline-primary" title="Download PDF Ticket">PDF</a>
                     {% endif %}
                     <a href="/bookings/{{ b.booking_reference }}" class="btn btn-sm btn-outline-secondary" title="View Receipt">Receipt</a>
                     
@@ -84,7 +84,7 @@
                             <div class="modal-body py-3">
                               <p class="mb-2">Are you sure you want to cancel booking <strong>{{ b.booking_reference }}</strong> for <em>{{ b.event_title }}</em>?</p>
                               <div class="alert alert-warning small mb-0">
-                                ⚠️ <strong>Note:</strong> Your digital ticket will be invalidated, reserved seats will be released, and any earned cashback (+₹{{ "%.2f"|format(b.cashback_amount or 0.0) }}) will be deducted from your reward balance.
+                                <i class="bi bi-exclamation-triangle me-1"></i> <strong>Note:</strong> Your digital ticket will be invalidated, reserved seats will be released, and any earned cashback (+₹{{ "%.2f"|format(b.cashback_amount or 0.0) }}) will be deducted from your reward balance.
                               </div>
                             </div>
                             <div class="modal-footer border-0 pt-0">

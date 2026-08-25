@@ -11,3 +11,4 @@ flask-wtf>=1.2.0
 marshmallow>=4.0.0
 gunicorn>=23.0.0
 waitress>=3.0.0
+flask-caching>=2.5.0

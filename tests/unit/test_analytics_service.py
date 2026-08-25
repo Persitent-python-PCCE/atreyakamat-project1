@@ -5,7 +5,7 @@
 # used by executive and admin dashboard reports.
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from Services.analytics_service import AnalyticsService
 
 
@@ -15,6 +15,22 @@ class TestAnalyticsService:
     def setup_service(self):
         self.analytics_service = AnalyticsService()
         self.mock_dao = MagicMock()
+        self.mock_dao.get_total_events.return_value = 0
+        self.mock_dao.get_active_events.return_value = 0
+        self.mock_dao.get_total_published_events.return_value = 0
+        self.mock_dao.get_total_unpublished_events.return_value = 0
+        self.mock_dao.get_total_bookings.return_value = 0
+        self.mock_dao.get_cancelled_bookings.return_value = 0
+        self.mock_dao.get_total_revenue.return_value = 0.0
+        self.mock_dao.get_total_cashback.return_value = 0.0
+        self.mock_dao.get_total_tickets_sold.return_value = 0
+        self.mock_dao.get_average_booking_value.return_value = 0.0
+        self.mock_dao.get_total_registered_customers.return_value = 0
+        self.mock_dao.get_total_venues.return_value = 0
+        self.mock_dao.get_total_checked_in_tickets.return_value = 0
+        self.mock_dao.get_active_holds_count.return_value = 0
+        self.mock_dao.get_expired_holds_today_count.return_value = 0
+        self.mock_dao.get_tickets_sold_by_type.return_value = {"seated": 0, "general_admission": 0}
         self.analytics_service.analytics_dao = self.mock_dao
 
     def test_get_dashboard_summary(self):
@@ -54,3 +70,30 @@ class TestAnalyticsService:
         assert "top_events" in res["data"]
         assert "revenue_by_category" in res["data"]
         assert "sales_over_time" in res["data"]
+
+    @patch("flask_caching.Cache.get")
+    @patch("flask_caching.Cache.set")
+    def test_caching_behavior(self, mock_set, mock_get):
+        """WHY: Verifies that full analytics queries the cache and sets a new value on miss."""
+        mock_get.return_value = None  # Cache miss
+
+        self.mock_dao.get_total_events.return_value = 5
+        self.mock_dao.get_active_events.return_value = 4
+        self.mock_dao.get_total_bookings.return_value = 20
+        self.mock_dao.get_cancelled_bookings.return_value = 1
+        self.mock_dao.get_total_revenue.return_value = 2000.00
+        self.mock_dao.get_total_cashback.return_value = 40.00
+        self.mock_dao.get_total_tickets_sold.return_value = 30
+        self.mock_dao.get_average_booking_value.return_value = 100.00
+        self.mock_dao.get_tickets_sold_by_type.return_value = {"seated": 10, "general_admission": 20}
+        self.mock_dao.get_total_registered_customers.return_value = 50
+        self.mock_dao.get_total_venues.return_value = 2
+
+        self.mock_dao.get_top_selling_events.return_value = []
+        self.mock_dao.get_revenue_by_category.return_value = []
+        self.mock_dao.get_sales_over_time.return_value = []
+
+        res = self.analytics_service.get_full_analytics(days=30)
+        assert res["success"] is True
+        mock_get.assert_called_once()
+        mock_set.assert_called_once()

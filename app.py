@@ -8,6 +8,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from Config.config import Config, DevelopmentConfig, ProductionConfig
 
+from flask_caching import Cache
+
 # Configure standard structured production logging
 logging.basicConfig(
     level=logging.INFO,
@@ -19,6 +21,7 @@ logger = logging.getLogger("SeatMeUp")
 db = SQLAlchemy()
 jwt = JWTManager()
 csrf = CSRFProtect()
+cache = Cache()
 
 
 def init_jwt_callbacks(jwt_manager):
@@ -76,6 +79,11 @@ def create_app(config_class=None):
     # Initialize CSRF Protection
     csrf.init_app(app)
 
+    # Initialize Cache with SimpleCache (in-memory, in-process)
+    app.config.setdefault("CACHE_TYPE", "SimpleCache")
+    app.config.setdefault("CACHE_DEFAULT_TIMEOUT", 60)
+    cache.init_app(app)
+
     # Apply ProxyFix for reverse proxies (Cloudflare Tunnel / Gunicorn) if enabled
     if app.config.get("USE_PROXY_FIX"):
         # x_for=1, x_proto=1, x_host=1, x_prefix=1 for trusted single-proxy reverse setups (Cloudflare Tunnel)
@@ -86,6 +94,8 @@ def create_app(config_class=None):
     runtime_dirs = [
         os.path.join(app.root_path, "uploads"),
         os.path.join(app.root_path, "static", "uploads"),
+        os.path.join(app.root_path, "static", "uploads", "event_posters"),
+        os.path.join(app.root_path, "static", "uploads", "user_documents"),
         os.path.join(app.root_path, "static", "generated_tickets"),
     ]
     for rdir in runtime_dirs:

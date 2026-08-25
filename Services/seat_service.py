@@ -61,8 +61,8 @@ class SeatService:
         """Return the visual seat map for an event with availability & hold states."""
         # 1. Validate event
         event = self.event_dao.get_event_by_id(event_id)
-        if event is None:
-            return fail("Event not found", 404)
+        if event is None or event.status != "published":
+            return fail("Event not found or not available", 404)
 
         # 2. Expire old holds
         self._clean_expired_holds()
@@ -94,26 +94,30 @@ class SeatService:
                 status = "booked"
                 is_available = False
                 hold_info = None
+                availability_reason = "Already booked"
             elif hold:
+                remaining = max(0, int((hold.expires_at - now).total_seconds()))
                 if user_id and hold.user_id == user_id:
                     status = "held_by_me"
                     is_available = True
-                    remaining = max(0, int((hold.expires_at - now).total_seconds()))
                     hold_info = {
                         "hold_token": hold.hold_token,
                         "expires_at": hold.expires_at.isoformat(),
                         "remaining_seconds": remaining,
                     }
+                    availability_reason = f"Held by you ({remaining:02d}s remaining)"
                     user_held_count += 1
                     user_total_price += seat_price
                 else:
                     status = "held"
                     is_available = False
                     hold_info = None
+                    availability_reason = f"Held temporarily ({remaining:02d}s remaining)"
             else:
                 status = "available"
                 is_available = True
                 hold_info = None
+                availability_reason = "Available"
 
             seat_dict = {
                 "id": seat.id,
@@ -123,6 +127,7 @@ class SeatService:
                 "price": seat_price,
                 "status": status,
                 "is_available": is_available,
+                "availability_reason": availability_reason,
                 "hold": hold_info,
             }
             seat_data_list.append(seat_dict)
@@ -150,6 +155,10 @@ class SeatService:
         event = self.event_dao.get_event_by_id(event_id)
         if event is None:
             return fail("Event not found", 404)
+        if event.status != "published":
+            return fail("Event is not available for booking", 400)
+        if not event.booking_open:
+            return fail("Booking is currently closed for this event", 400)
 
         # 3. Validate Seat
         seat = self.seat_dao.get_seat_by_id(seat_id)

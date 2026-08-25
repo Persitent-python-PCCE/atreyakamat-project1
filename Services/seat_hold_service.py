@@ -70,8 +70,13 @@ class SeatHoldService:
                 return fail(f"Missing required field: {f}", 400)
 
         # cross-checks
-        if self.event_dao.get_event_by_id(data["event_id"]) is None:
+        event = self.event_dao.get_event_by_id(data["event_id"])
+        if event is None:
             return fail("Event not found", 404)
+        if event.status != "published":
+            return fail("Event is not available for booking", 400)
+        if not event.booking_open:
+            return fail("Booking is currently closed for this event", 400)
         if self.seat_dao.get_seat_by_id(data["seat_id"]) is None:
             return fail("Seat not found", 404)
         # (We don't check the user here to keep the basic API simple; a

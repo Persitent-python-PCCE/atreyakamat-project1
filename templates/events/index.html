@@ -60,8 +60,8 @@
             {% if event.poster %}
               <img src="{{ event.poster }}" class="card-img-top rounded mb-3" alt="{{ event.title }}" style="height: 190px; object-fit: cover;">
             {% else %}
-              <div class="rounded d-flex align-items-center justify-content-center mb-3 text-white" style="height: 190px; background: var(--burgundy);">
-                <span class="fs-2">🎭</span>
+              <div class="rounded d-flex align-items-center justify-content-center mb-3 text-white" style="height: 190px; background: linear-gradient(135deg, var(--burgundy), #3a0007);">
+                <i class="bi bi-calendar-event fs-1 text-white-50"></i>
               </div>
             {% endif %}
 
@@ -78,10 +78,10 @@
               <h4 class="fw-bold my-2" style="color: var(--burgundy);">{{ event.title }}</h4>
 
               <p class="text-muted small mb-1">
-                📅 {{ event.event_date }} {% if event.start_time %}• ⏰ {{ event.start_time }}{% endif %}
+                <i class="bi bi-calendar3 me-1"></i>{{ event.event_date }} {% if event.start_time %}• <i class="bi bi-clock me-1 ms-1"></i>{{ event.start_time }}{% endif %}
               </p>
               <p class="text-muted small mb-2">
-                📍 {{ event.venue_name or 'Main Venue' }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}
+                <i class="bi bi-geo-alt me-1"></i>{{ event.venue_name or 'Main Venue' }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}
               </p>
 
               <p class="text-secondary small mb-3 flex-grow-1">

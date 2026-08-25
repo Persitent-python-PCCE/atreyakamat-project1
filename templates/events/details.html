@@ -13,12 +13,12 @@
   <div class="card shadow-sm border-0 p-4">
     <div class="row g-4">
       <!-- Poster / Media Frame -->
-      <div class="col-md-5 d-flex align-items-center justify-content-center p-3 rounded" style="background: var(--burgundy); min-height: 340px;">
+      <div class="col-md-5 d-flex align-items-center justify-content-center p-3 rounded" style="background: linear-gradient(135deg, var(--burgundy), #3a0007); min-height: 340px;">
         {% if event.poster %}
           <img src="{{ event.poster }}" class="img-fluid rounded shadow" alt="{{ event.title }}" style="max-height: 360px; object-fit: contain;">
         {% else %}
           <div class="text-center text-white p-4">
-            <div class="display-2 mb-2">🎭</div>
+            <div class="display-2 mb-2 text-white-50"><i class="bi bi-calendar-event"></i></div>
             <h4 class="text-white">{{ event.title }}</h4>
           </div>
         {% endif %}
@@ -34,7 +34,7 @@
             <span class="badge bg-secondary">Booking Closed</span>
           {% endif %}
           <span class="badge bg-light text-dark border">
-            {% if event.requires_seats %}💺 Seated Event{% else %}🎟️ General Admission{% endif %}
+            {% if event.requires_seats %}<i class="bi bi-grid-3x3 me-1"></i> Seated Event{% else %}<i class="bi bi-ticket-perforated me-1"></i> General Admission{% endif %}
           </span>
           <span class="badge bg-light text-secondary border text-capitalize">{{ event.status }}</span>
         </div>
@@ -44,7 +44,7 @@
         <div class="row g-3 mb-4 text-muted">
           <div class="col-sm-6">
             <div class="d-flex align-items-center">
-              <span class="fs-4 me-2">📅</span>
+              <i class="bi bi-calendar3 fs-4 me-2 text-primary"></i>
               <div>
                 <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Date</small>
                 <strong class="text-dark">{{ event.event_date }}</strong>
@@ -53,7 +53,7 @@
           </div>
           <div class="col-sm-6">
             <div class="d-flex align-items-center">
-              <span class="fs-4 me-2">⏰</span>
+              <i class="bi bi-clock fs-4 me-2 text-primary"></i>
               <div>
                 <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Time</small>
                 <strong class="text-dark">{{ event.start_time }} {% if event.end_time %}– {{ event.end_time }}{% endif %}</strong>
@@ -62,7 +62,7 @@
           </div>
           <div class="col-sm-12">
             <div class="d-flex align-items-center">
-              <span class="fs-4 me-2">📍</span>
+              <i class="bi bi-geo-alt fs-4 me-2 text-primary"></i>
               <div>
                 <small class="text-uppercase fw-semibold d-block" style="color: var(--muted);">Venue &amp; Location</small>
                 <strong class="text-dark">{{ venue.name if venue else (event.venue_name or 'Main Venue') }}</strong>
@@ -92,21 +92,21 @@
             {% if event.requires_seats %}
               {% if current_user %}
                 <a href="/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
-                  Select Seats 💺
+                  Select Seats
                 </a>
               {% else %}
                 <a href="/login?next=/events/{{ event.id }}/seats" class="btn btn-primary btn-lg px-4 fw-bold">
-                  Login to Select Seats 🎟️
+                  Login to Select Seats
                 </a>
               {% endif %}
             {% else %}
               {% if current_user %}
                 <a href="/events/{{ event.id }}/checkout" class="btn btn-primary btn-lg px-4 fw-bold">
-                  Book Tickets 🎟️
+                  Book Tickets
                 </a>
               {% else %}
                 <a href="/login?next=/events/{{ event.id }}/checkout" class="btn btn-primary btn-lg px-4 fw-bold">
-                  Login to Book Tickets 🎟️
+                  Login to Book Tickets
                 </a>
               {% endif %}
             {% endif %}

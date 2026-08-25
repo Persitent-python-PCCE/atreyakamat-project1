@@ -3,19 +3,7 @@
 {% block content %}
 <div class="row my-4">
   <!-- Admin Sidebar -->
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-0 p-3">
-      <h5 class="fw-bold px-3 py-2 mb-2 border-bottom" style="color: var(--burgundy);">Admin Menu</h5>
-      <div class="nav flex-column nav-pills">
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/dashboard">📊 Dashboard</a>
-        <a class="nav-link active btn-primary mb-1 fw-semibold" href="/admin/events" style="border-radius: 8px; color: var(--white) !important;">🎭 Events</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/categories">📂 Categories</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/venues">📍 Venues</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/bookings">🎟️ Bookings</a>
-        <a class="nav-link text-dark mb-1 fw-semibold" href="/admin/analytics">📈 Analytics</a>
-      </div>
-    </div>
-  </div>
+  {% include "admin/_sidebar.html" %}
 
   <!-- Events Management Content -->
   <div class="col-md-9">
@@ -53,9 +41,11 @@
                   <td class="text-muted small">{{ e.venue_name or 'Venue' }}</td>
                   <td class="text-muted small">{{ e.event_date }}</td>
                   <td>
-                    <span class="badge {% if e.status == 'published' %}bg-success{% elif e.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} text-capitalize">
-                      {{ e.status }}
-                    </span>
+                    {% if e.status == 'published' %}
+                      <span class="badge bg-success">Published</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Unpublished</span>
+                    {% endif %}
                   </td>
                   <td class="fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(e.base_price or 0.0) }}</td>
                   <td>
@@ -64,12 +54,16 @@
                     {% else %}
                       <span class="badge bg-secondary">No</span>
                     {% endif %}
-                  </td>
                   <td>
-                    <div class="d-flex gap-1">
-                      <a href="/events/{{ e.id }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="View event page">View</a>
+                    <div class="d-flex gap-1 flex-wrap">
+                      <a href="/admin/events/{{ e.id }}/operations" class="btn btn-sm btn-info text-white fw-semibold" title="Event Operations Dashboard">
+                        <i class="bi bi-speedometer2 me-1"></i>Operations
+                      </a>
                       <a href="/admin/events/{{ e.id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit event">Edit</a>
                       <a href="/admin/events/{{ e.id }}/reschedule" class="btn btn-sm btn-outline-warning text-dark fw-semibold" title="Reschedule event date/time">Reschedule</a>
+                      {% if e.status == 'published' %}
+                        <a href="/events/{{ e.id }}" class="btn btn-sm btn-outline-secondary" target="_blank" title="View public event page">View</a>
+                      {% endif %}
                       <form method="POST" action="/admin/events/{{ e.id }}/delete" onsubmit="return confirm('Are you sure you want to delete event &quot;{{ e.title }}&quot;?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete event">Delete</button>

@@ -7,7 +7,7 @@
       <div class="card shadow-sm border-0 p-0 overflow-hidden" style="border-radius: 16px; border: 2px solid #28a745;">
         <!-- Verified Success Header Strip -->
         <div class="p-4 text-white text-center" style="background: #28a745;">
-          <div class="display-3 mb-1">✅</div>
+          <div class="display-3 mb-1 text-white"><i class="bi bi-shield-check"></i></div>
           <h2 class="fw-bold mb-1 text-white">Ticket Verified</h2>
           <p class="mb-0 text-white fs-5 fw-semibold" style="letter-spacing: 0.05rem;">Entry Approved</p>
         </div>
@@ -34,11 +34,11 @@
             </div>
             <div class="col-sm-6">
               <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Event Date &amp; Time</small>
-              <span class="text-dark">📅 {{ verification.event_date }} • ⏰ {{ verification.start_time }}</span>
+              <span class="text-dark"><i class="bi bi-calendar3 me-1"></i>{{ verification.event_date }} • <i class="bi bi-clock me-1 ms-1"></i>{{ verification.start_time }}</span>
             </div>
             <div class="col-sm-6">
               <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Venue</small>
-              <span class="text-dark">📍 {{ verification.venue_name }}</span>
+              <span class="text-dark"><i class="bi bi-geo-alt me-1"></i>{{ verification.venue_name }}</span>
             </div>
           </div>
 
@@ -48,14 +48,14 @@
               <small class="text-muted text-uppercase d-block fw-bold mb-1" style="font-size: 0.75rem;">Allocated Seats</small>
               <div class="d-flex flex-wrap gap-2">
                 {% for s in verification.seats %}
-                  <span class="badge bg-white text-dark border px-2 py-1 fs-6">💺 Seat {{ s }}</span>
+                  <span class="badge bg-white text-dark border px-2 py-1 fs-6">Seat {{ s }}</span>
                 {% endfor %}
               </div>
             </div>
           {% else %}
             <div class="p-3 rounded mb-4" style="background: var(--surface); border: 1px dashed #28a745;">
               <small class="text-muted text-uppercase d-block fw-bold mb-1" style="font-size: 0.75rem;">General Admission</small>
-              <span class="badge bg-white text-dark border px-3 py-2 fs-6">🎟️ Quantity: {{ verification.quantity or 1 }} Ticket(s)</span>
+              <span class="badge bg-white text-dark border px-3 py-2 fs-6">Quantity: {{ verification.quantity or 1 }} Ticket(s)</span>
             </div>
           {% endif %}
 

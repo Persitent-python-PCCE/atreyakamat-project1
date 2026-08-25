@@ -1,7 +1,7 @@
 # tests/models/test_event_model.py
 #
 # SQLAlchemy Model test for Event model.
-# WHY: Verifies Event model defaults (status='draft', booking_open=True, requires_seats=True).
+# WHY: Verifies Event model defaults (status='unpublished', booking_open=True, requires_seats=True).
 
 import pytest
 from datetime import date, timedelta, time
@@ -34,6 +34,6 @@ class TestEventModel:
         db_session.commit()
 
         assert ev.id is not None
-        assert ev.status == "draft"
+        assert ev.status == "unpublished"
         assert ev.booking_open is True
         assert ev.requires_seats is True

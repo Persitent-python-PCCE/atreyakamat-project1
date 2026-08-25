@@ -20,6 +20,8 @@ from Services.venue_service import VenueService
 from Services.category_service import CategoryService
 from Services.booking_service import BookingService
 from Services.seat_service import SeatService
+from Services.promo_service import PromoCodeService
+from Services.analytics_service import AnalyticsService
 from Controller.auth_guards import get_current_user_info
 
 web_admin_bp = Blueprint("web_admin_bp", __name__, url_prefix="/admin")
@@ -29,6 +31,8 @@ venue_service = VenueService()
 category_service = CategoryService()
 booking_service = BookingService()
 seat_service = SeatService()
+promo_service = PromoCodeService()
+analytics_service = AnalyticsService()
 
 
 def _require_admin():
@@ -81,8 +85,23 @@ def admin_events():
     if err_resp:
         return err_resp
 
-    events = event_service.get_all_events().get("data", [])
+    events = event_service.get_all_events(include_unpublished=True).get("data", [])
     return render_template("admin/events/index.html", events=events)
+
+
+@web_admin_bp.route("/events/<int:event_id>/operations", methods=["GET"])
+def event_operations(event_id):
+    """Event Operations Dashboard for a single selected event."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    ops_res = analytics_service.get_event_operations(event_id)
+    if not ops_res.get("success"):
+        return render_template("error.html", message=ops_res.get("message", "Event not found"), status_code=404), 404
+
+    ops_data = ops_res.get("data", {})
+    return render_template("admin/events/operations.html", ops=ops_data)
 
 
 @web_admin_bp.route("/events/create", methods=["GET", "POST"])
@@ -107,8 +126,29 @@ def create_event():
         poster = request.form.get("poster", "").strip() or None
         booking_open = request.form.get("booking_open") == "1" or request.form.get("booking_open") == "true" or request.form.get("booking_open") == "on"
         requires_seats = request.form.get("requires_seats") == "1" or request.form.get("requires_seats") == "true" or request.form.get("requires_seats") == "on"
-        status = request.form.get("status", "published")
+        status = request.form.get("status", "unpublished")
         base_price = request.form.get("base_price") or 0.0
+
+        if status not in ("published", "unpublished"):
+            error = "Invalid status. Allowed: published, unpublished"
+            return render_template("admin/events/create.html", categories=categories, venues=venues, error=error)
+
+        # Handle local file upload
+        poster_file = request.files.get("poster_file")
+        uploaded_file_id = None
+        if poster_file and poster_file.filename != "":
+            from Services.uploaded_file_service import UploadedFileService
+            file_res = UploadedFileService().save_poster(poster_file, event_id=None, user_id=admin_user["id"])
+            if not file_res.get("success"):
+                error = file_res.get("message")
+                return render_template(
+                    "admin/events/create.html",
+                    categories=categories,
+                    venues=venues,
+                    error=error,
+                )
+            poster = file_res["data"]["file_path"]
+            uploaded_file_id = file_res["data"]["id"]
 
         data = {
             "title": title,
@@ -128,6 +168,19 @@ def create_event():
 
         res = event_service.create_event(data)
         if res.get("success"):
+            # Update uploaded file with correct event_id
+            if uploaded_file_id:
+                from models.uploaded_file import UploadedFile
+                from app import db
+                db_file = UploadedFile.query.get(uploaded_file_id)
+                if db_file:
+                    db_file.event_id = res["data"]["id"]
+                    db.session.commit()
+            
+            # Invalidate cache
+            from Services.cache_service import invalidate_analytics_cache
+            invalidate_analytics_cache()
+
             return redirect(url_for("web_admin_bp.admin_events"))
         else:
             error = res.get("message")
@@ -147,7 +200,7 @@ def edit_event(event_id):
     if err_resp:
         return err_resp
 
-    event_res = event_service.get_event_by_id(event_id)
+    event_res = event_service.get_event_by_id(event_id, include_unpublished=True)
     if not event_res.get("success"):
         return render_template("error.html", message="Event not found", status_code=404), 404
 
@@ -157,6 +210,35 @@ def edit_event(event_id):
     error = None
 
     if request.method == "POST":
+        poster = request.form.get("poster", "").strip() or event.get("poster")
+        
+        # Handle local file upload
+        poster_file = request.files.get("poster_file")
+        if poster_file and poster_file.filename != "":
+            from Services.uploaded_file_service import UploadedFileService
+            file_res = UploadedFileService().save_poster(poster_file, event_id=event_id, user_id=admin_user["id"])
+            if not file_res.get("success"):
+                error = file_res.get("message")
+                return render_template(
+                    "admin/events/edit.html",
+                    event=event,
+                    categories=categories,
+                    venues=venues,
+                    error=error,
+                )
+            poster = file_res["data"]["file_path"]
+
+        status_val = request.form.get("status", "unpublished")
+        if status_val not in ("published", "unpublished"):
+            error = "Invalid status. Allowed: published, unpublished"
+            return render_template(
+                "admin/events/edit.html",
+                event=event,
+                categories=categories,
+                venues=venues,
+                error=error,
+            )
+
         data = {
             "title": request.form.get("title", "").strip(),
             "category_id": int(request.form.get("category_id")),
@@ -165,15 +247,19 @@ def edit_event(event_id):
             "start_time": request.form.get("start_time"),
             "end_time": request.form.get("end_time") or None,
             "description": request.form.get("description", "").strip(),
-            "poster": request.form.get("poster", "").strip() or None,
+            "poster": poster,
             "booking_open": request.form.get("booking_open") in ["1", "true", "on"],
             "requires_seats": request.form.get("requires_seats") in ["1", "true", "on"],
             "base_price": float(request.form.get("base_price") or 0.0),
-            "status": request.form.get("status", "published"),
+            "status": status_val,
         }
 
         res = event_service.update_event(event_id, data)
         if res.get("success"):
+            # Invalidate cache
+            from Services.cache_service import invalidate_analytics_cache
+            invalidate_analytics_cache()
+
             return redirect(url_for("web_admin_bp.admin_events"))
         else:
             error = res.get("message")
@@ -226,7 +312,18 @@ def reschedule_event(event_id):
                 reason=reason,
             )
             if result.get("success"):
-                return redirect(url_for("web_admin_bp.admin_events"))
+                summary = result.get("data", {})
+                event_res = event_service.get_event_by_id(event_id)
+                event = event_res.get("data", event)
+                history_res = reschedule_service.get_reschedule_history(event_id)
+                history = history_res.get("data", []) if history_res.get("success") else []
+                return render_template(
+                    "admin/events/reschedule.html",
+                    event=event,
+                    history=history,
+                    summary=summary,
+                    error=None,
+                )
             else:
                 error = result.get("message", "Rescheduling failed.")
 
@@ -234,6 +331,7 @@ def reschedule_event(event_id):
         "admin/events/reschedule.html",
         event=event,
         history=history,
+        summary=None,
         error=error,
     )
 
@@ -505,3 +603,89 @@ def admin_analytics():
         sales_over_time=analytics_data.get("sales_over_time", []),
         filter_days=days,
     )
+
+
+@web_admin_bp.route("/promos")
+def admin_promos():
+    """Admin Promo Code management page."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    promos_res = promo_service.get_all_promos()
+    promos = promos_res.get("data", [])
+    return render_template(
+        "admin/promos.html",
+        promos=promos,
+        error=request.args.get("error"),
+        success=request.args.get("success"),
+    )
+
+
+@web_admin_bp.route("/promos/create", methods=["POST"])
+def admin_create_promo():
+    """Create a new promo code via web form."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    code = request.form.get("code", "").strip().upper()
+    description = request.form.get("description", "").strip()
+    discount_type = request.form.get("discount_type", "percentage")
+    discount_value_str = request.form.get("discount_value", "0")
+    min_amount_str = request.form.get("minimum_booking_amount", "0")
+    max_uses_str = request.form.get("max_uses", "")
+
+    try:
+        discount_value = float(discount_value_str)
+        min_amount = float(min_amount_str) if min_amount_str else 0.0
+        max_uses = int(max_uses_str) if max_uses_str and max_uses_str.isdigit() else None
+    except ValueError:
+        return redirect(url_for("web_admin_bp.admin_promos", error="Invalid numeric values provided"))
+
+    payload = {
+        "code": code,
+        "description": description or None,
+        "discount_type": discount_type,
+        "discount_value": discount_value,
+        "minimum_booking_amount": min_amount,
+        "max_uses": max_uses,
+        "is_active": True,
+    }
+
+    res = promo_service.create_promo(payload)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_promos", error=res.get("message")))
+    return redirect(url_for("web_admin_bp.admin_promos", success=f"Promo code '{code}' created successfully"))
+
+
+@web_admin_bp.route("/promos/<int:promo_id>/toggle", methods=["POST"])
+def admin_toggle_promo(promo_id):
+    """Toggle promo code active state."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    promo = promo_service.get_promo_by_id(promo_id).get("data", {})
+    if not promo:
+        return redirect(url_for("web_admin_bp.admin_promos", error="Promo code not found"))
+
+    new_state = not promo.get("is_active", True)
+    res = promo_service.update_promo(promo_id, {"is_active": new_state})
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_promos", error=res.get("message")))
+    status_label = "activated" if new_state else "deactivated"
+    return redirect(url_for("web_admin_bp.admin_promos", success=f"Promo code {status_label}"))
+
+
+@web_admin_bp.route("/promos/<int:promo_id>/delete", methods=["POST"])
+def admin_delete_promo(promo_id):
+    """Delete a promo code."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    res = promo_service.delete_promo(promo_id)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_promos", error=res.get("message")))
+    return redirect(url_for("web_admin_bp.admin_promos", success="Promo code deleted successfully"))

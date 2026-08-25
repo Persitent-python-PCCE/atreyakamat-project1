@@ -193,6 +193,9 @@ def checkout_page(event_id):
         return render_template("error.html", message="Event not found", status_code=404), 404
     event = event_res.get("data", {})
 
+    import uuid
+    idempotency_key = request.form.get("idempotency_key") or f"web-idemp-{uuid.uuid4().hex[:16]}"
+
     # Process Confirm Booking POST action
     if request.method == "POST" and request.form.get("action") == "confirm_booking":
         booking_result = booking_service.confirm_booking(
@@ -201,6 +204,7 @@ def checkout_page(event_id):
             selected_addons=selected_addons,
             promo_code=promo_code if promo_code else None,
             quantity=quantity,
+            idempotency_key=idempotency_key,
         )
 
         if booking_result.get("success"):
@@ -229,6 +233,7 @@ def checkout_page(event_id):
                 user=current_user,
                 promo_code=promo_code,
                 quantity=quantity,
+                idempotency_key=idempotency_key,
                 error=error_msg,
             )
 
@@ -254,6 +259,7 @@ def checkout_page(event_id):
                 user=current_user,
                 promo_code=promo_code,
                 quantity=quantity,
+                idempotency_key=idempotency_key,
                 error=error_msg,
             )
 
@@ -266,6 +272,7 @@ def checkout_page(event_id):
         user=current_user,
         promo_code=promo_code,
         quantity=quantity,
+        idempotency_key=idempotency_key,
         error=None,
     )
 

@@ -50,12 +50,15 @@ def confirm_booking():
     if err_resp:
         return err_resp
 
+    idempotency_key = request.headers.get("Idempotency-Key") or validated_data.get("idempotency_key")
+
     result = booking_service.confirm_booking(
         user_id=user_id,
         event_id=int(validated_data["event_id"]),
         selected_addons=validated_data.get("selected_addons") or {},
         promo_code=validated_data.get("promo_code"),
         quantity=validated_data.get("quantity"),
+        idempotency_key=idempotency_key,
     )
     return jsonify(result), result.get("status", 200)
 

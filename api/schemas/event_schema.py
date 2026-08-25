@@ -17,7 +17,11 @@ class EventCreateRequestSchema(Schema):
     booking_open = fields.Boolean(required=False)
     requires_seats = fields.Boolean(required=False)
     base_price = fields.Float(required=False, validate=validate.Range(min=0.0))
-    status = fields.String(required=False, validate=validate.OneOf(["published", "draft", "cancelled", "completed"]))
+    status = fields.String(
+        required=False,
+        validate=validate.OneOf(["published", "unpublished"]),
+        load_default="unpublished",
+    )
     created_by = fields.Integer(required=False)
 
 
@@ -33,7 +37,7 @@ class EventUpdateRequestSchema(Schema):
     booking_open = fields.Boolean(required=False)
     requires_seats = fields.Boolean(required=False)
     base_price = fields.Float(required=False, validate=validate.Range(min=0.0))
-    status = fields.String(required=False, validate=validate.OneOf(["published", "draft", "cancelled", "completed"]))
+    status = fields.String(required=False, validate=validate.OneOf(["published", "unpublished"]))
 
 
 class EventResponseSchema(Schema):

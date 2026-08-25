@@ -145,13 +145,13 @@ converted into a real SQLAlchemy model.
 | `description` | Text | | nullable | | | — | |
 | `event_date` | DateTime | | NN | | | — | drives seat-hold expiry and ticket expiry |
 | `event_type` | String(20) | | NN | | `"seated"` | — | `seated` / `general_admission` — see Part G |
-| `status` | String(20) | | NN | | `"draft"` | — | see enum below |
+| `status` | String(20) | | NN | | `"unpublished"` | — | see enum below |
 | `ticket_price` | Numeric(10,2) | | NN | | `0` | — | base price; used mainly by general-admission events |
 | `capacity` | Integer | | nullable | | | — | max tickets for GA events; **To be decided** |
 | `created_at` | DateTime | | NN | | `utcnow` | — | |
 | `updated_at` | DateTime | | NN | | `utcnow` (onupdate) | — | |
 
-**Enums / status values (`status`):** `draft`, `published`, `cancelled`, `rescheduled`, `completed` (**Proposal** — final list **To be decided**).
+**Enums / status values (`status`):** `published`, `unpublished` (Strictly binary event status system).
 
 **Relationships:**
 - `category` — many Events belong to one Category.

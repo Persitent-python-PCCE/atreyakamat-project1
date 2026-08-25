@@ -6,7 +6,7 @@
     <div class="col-lg-8">
       <!-- Success Header Banner -->
       <div class="card shadow-sm border-0 p-4 text-center mb-4" style="background: var(--surface);">
-        <div class="display-3 mb-2">🎉</div>
+        <div class="display-3 mb-2 text-success"><i class="bi bi-check-circle-fill"></i></div>
         <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Booking Confirmed!</h2>
         <p class="text-muted mb-3">Thank you for booking with SeatMeUp. Your order has been officially processed.</p>
 
@@ -18,12 +18,12 @@
         <!-- Email Delivery Notice -->
         {% if booking.email_sent %}
           <div class="alert alert-info py-2 small mb-0 d-inline-flex align-items-center gap-2 mx-auto" role="alert">
-            <span>📧</span>
+            <i class="bi bi-envelope"></i>
             <span>Your official digital ticket has been emailed to <strong>{{ user.email }}</strong>.</span>
           </div>
         {% else %}
           <div class="alert alert-light border py-2 small mb-0 d-inline-flex align-items-center gap-2 mx-auto text-secondary" role="alert">
-            <span>ℹ️</span>
+            <i class="bi bi-info-circle"></i>
             <span>Your booking is confirmed! You can view and download your PDF ticket directly below.</span>
           </div>
         {% endif %}
@@ -60,9 +60,9 @@
                 <tr>
                   <td>
                     {% if it.seat_number and it.seat_number != 'General Admission' %}
-                      <strong>💺 Seat {{ it.seat_number }}</strong>
+                      <strong>Seat {{ it.seat_number }}</strong>
                     {% else %}
-                      <strong>🎟️ General Admission Ticket</strong>
+                      <strong>General Admission Ticket</strong>
                     {% endif %}
                   </td>
                   <td>{{ it.quantity or 1 }}</td>
@@ -115,7 +115,7 @@
         <!-- 2% Cashback Earned Badge -->
         <div class="alert alert-success d-flex align-items-center justify-content-between mb-4 py-3" role="alert">
           <div>
-            <strong>💰 2% Cashback Earned:</strong>
+            <strong><i class="bi bi-gift me-1"></i> 2% Cashback Earned:</strong>
             <span class="ms-1">+₹{{ "%.2f"|format(booking.cashback_amount or 0.0) }} credited to your reward wallet!</span>
           </div>
           <span class="badge bg-success">Credited</span>
@@ -126,10 +126,10 @@
           <a href="/my-bookings" class="btn btn-outline-secondary">&larr; My Bookings</a>
           <div class="d-flex flex-wrap gap-2">
             <a href="/bookings/{{ booking.booking_reference }}/ticket/pdf" class="btn btn-outline-primary fw-semibold">
-              📥 Download PDF Ticket
+              <i class="bi bi-download me-1"></i> Download PDF Ticket
             </a>
             <a href="/bookings/{{ booking.booking_reference }}/ticket" class="btn btn-primary fw-bold">
-              🎟️ View Digital Ticket &rarr;
+              View Digital Ticket &rarr;
             </a>
           </div>
         </div>

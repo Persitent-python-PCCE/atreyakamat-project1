@@ -39,13 +39,16 @@ class TestMySQLSchemaCompatibility:
             assert "active" in col_type
 
     def test_mysql_events_status_enum_contains_published(self):
-        """WHY: Real MySQL events table must permit 'draft', 'published', 'cancelled', and 'completed'."""
+        """WHY: Real MySQL events table must permit ONLY 'published' and 'unpublished'."""
         with self.engine.connect() as conn:
             result = conn.execute(text("SHOW COLUMNS FROM events LIKE 'status'")).fetchone()
             assert result is not None
             col_type = result[1].lower()
             assert "published" in col_type
-            assert "draft" in col_type
+            assert "unpublished" in col_type
+            assert "draft" not in col_type
+            assert "cancelled" not in col_type
+            assert "completed" not in col_type
 
     def test_mysql_venues_venue_type_enum_contains_general(self):
         """WHY: Real MySQL venues table must permit both 'seated' and 'general' venue types."""

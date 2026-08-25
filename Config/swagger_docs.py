@@ -144,7 +144,7 @@ SWAGGER_TEMPLATE = {
                 "end_time": {"type": "string", "example": "23:00:00"},
                 "poster": {"type": "string", "example": "uploads/goa_music.jpg"},
                 "booking_open": {"type": "boolean", "example": True},
-                "status": {"type": "string", "enum": ["draft", "published", "cancelled", "completed"], "example": "published"},
+                "status": {"type": "string", "enum": ["published", "unpublished"], "example": "published"},
                 "requires_seats": {"type": "boolean", "example": True},
                 "base_price": {"type": "number", "format": "float", "example": 500.00},
                 "created_at": {"type": "string", "format": "date-time", "example": "2026-08-01T10:00:00"},
@@ -919,7 +919,7 @@ SWAGGER_TEMPLATE = {
                             "type": "object",
                             "properties": {
                                 "title": {"type": "string", "example": "Goa Music Nights 2026 - Extended"},
-                                "status": {"type": "string", "enum": ["draft", "published", "cancelled", "completed"], "example": "published"},
+                                "status": {"type": "string", "enum": ["published", "unpublished"], "example": "published"},
                                 "base_price": {"type": "number", "format": "float", "example": 550.00},
                             },
                         },

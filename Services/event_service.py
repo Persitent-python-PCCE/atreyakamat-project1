@@ -84,7 +84,14 @@ class EventService:
             except ValueError:
                 return fail("end_time must be HH:MM or HH:MM:SS", 400)
 
-        # 5) Build the Event model object
+        # 5) Validate status (strictly 'published' or 'unpublished')
+        raw_status = data.get("status", "unpublished")
+        if raw_status is None:
+            raw_status = "unpublished"
+        if raw_status not in ("published", "unpublished"):
+            return fail("Invalid event status. Allowed values: published, unpublished", 400)
+
+        # 6) Build the Event model object
         event = Event(
             title=data["title"],
             category_id=data["category_id"],
@@ -96,7 +103,7 @@ class EventService:
             end_time=end_t,
             poster=data.get("poster"),
             booking_open=data.get("booking_open", True),
-            status=data.get("status", "draft"),
+            status=raw_status,
             requires_seats=data.get("requires_seats", True),
             base_price=data.get("base_price", 0.00),
         )
@@ -110,14 +117,19 @@ class EventService:
     # ---------------------------------------------------------------- #
     # READ
     # ---------------------------------------------------------------- #
-    def get_event_by_id(self, event_id: int) -> dict:
+    def get_event_by_id(self, event_id: int, include_unpublished: bool = False) -> dict:
         event = self.event_dao.get_event_by_id(event_id)
         if event is None:
             return fail("Event not found", 404)
+        if not include_unpublished and event.status != "published":
+            return fail("Event not found", 404)
         return ok("Event retrieved", event_to_dict(event))
 
-    def get_all_events(self) -> dict:
-        events = self.event_dao.get_all_events()
+    def get_all_events(self, include_unpublished: bool = False) -> dict:
+        if include_unpublished:
+            events = self.event_dao.get_all_events()
+        else:
+            events = self.event_dao.get_published_events()
         return ok("Events retrieved", [event_to_dict(e) for e in events])
 
     def get_upcoming_events(self) -> dict:
@@ -149,6 +161,13 @@ class EventService:
         if event is None:
             return fail("Event not found", 404)
 
+        # Status validation if status is provided in data
+        if "status" in data:
+            new_status = data["status"]
+            if new_status not in ("published", "unpublished"):
+                return fail("Invalid event status. Allowed values: published, unpublished", 400)
+            event.status = new_status
+
         # If the caller is changing category_id / venue_id, the new ones
         # must still exist (same rule as create).
         if "category_id" in data:
@@ -165,7 +184,7 @@ class EventService:
         # Plain editable fields
         for field in [
             "title", "description",
-            "poster", "booking_open", "status", "requires_seats",
+            "poster", "booking_open", "requires_seats",
             "base_price",
         ]:
             if field in data:
@@ -214,6 +233,12 @@ class EventService:
         event = self.event_dao.get_event_by_id(event_id)
         if event is None:
             return fail("Event not found", 404)
+        try:
+            from Services.uploaded_file_service import UploadedFileService
+            UploadedFileService().delete_event_posters(event_id)
+        except Exception:
+            pass
+
         try:
             self.event_dao.delete_event(event)
         except Exception:

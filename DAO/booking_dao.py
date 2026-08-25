@@ -42,6 +42,12 @@ class BookingDAO:
         """
         return Booking.query.filter_by(booking_reference=reference).first()
 
+    def get_booking_by_idempotency_key(self, idempotency_key: str) -> Booking | None:
+        """Load one booking by its idempotency_key."""
+        if not idempotency_key:
+            return None
+        return Booking.query.filter_by(idempotency_key=idempotency_key.strip()).first()
+
     def get_user_bookings(self, user_id: int) -> list[Booking]:
         """Return all bookings placed by a given user (any status)."""
         return Booking.query.filter_by(user_id=user_id).all()

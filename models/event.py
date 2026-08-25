@@ -18,7 +18,7 @@ class Event(BaseModel):
     end_time = db.Column(db.Time, nullable=True)
     poster = db.Column(db.String(255), nullable=True)
     booking_open = db.Column(db.Boolean, nullable=False, default=True)
-    status = db.Column(db.String(20), nullable=False, default="draft")
+    status = db.Column(db.String(20), nullable=False, default="unpublished")
     requires_seats = db.Column(db.Boolean, nullable=False, default=True)
     base_price = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
