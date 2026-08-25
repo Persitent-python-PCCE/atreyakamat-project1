@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row my-4">
+  <!-- Admin Sidebar -->
+  {% include "admin/_sidebar.html" %}
+
+  <div class="col-md-9">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div>
+        <h2 class="fw-bold mb-1" style="color: var(--burgundy);">Event Add-ons</h2>
+        <p class="text-muted mb-0">Configure event extras, merchandise, food &amp; beverage passes, and VIP perks</p>
+      </div>
+      <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createAddonCollapse" aria-expanded="false" aria-controls="createAddonCollapse">
+        <i class="bi bi-plus-lg me-1"></i> Add New Add-on
+      </button>
+    </div>
+
+    <!-- Flash Messages -->
+    {% if error %}
+      <div class="alert alert-danger py-2 small mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error }}
+      </div>
+    {% endif %}
+    {% if success %}
+      <div class="alert alert-success py-2 small mb-3" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>{{ success }}
+      </div>
+    {% endif %}
+
+    <!-- Create Addon Collapsible Form -->
+    <div class="collapse mb-4" id="createAddonCollapse">
+      <div class="card shadow-sm border-0 p-4">
+        <h5 class="fw-bold mb-3" style="color: var(--burgundy);">New Event Add-on</h5>
+        <form method="POST" action="/admin/addons/create">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Target Event *</label>
+              <select name="event_id" class="form-select" required>
+                <option value="">-- Select Event --</option>
+                {% for ev in events %}
+                  <option value="{{ ev.id }}" {% if selected_event_id == ev.id %}selected{% endif %}>
+                    #{{ ev.id }} - {{ ev.title }} ({{ ev.event_date }})
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Add-on Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. VIP Lounge Pass, Festival T-Shirt, Food Voucher" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Price (₹) *</label>
+              <input type="number" step="0.01" min="0" name="price" class="form-control" placeholder="e.g. 250.00" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Available Stock / Quantity *</label>
+              <input type="number" min="0" name="available_quantity" class="form-control" placeholder="e.g. 50" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Description (Optional)</label>
+              <input type="text" name="description" class="form-control" placeholder="Brief description visible to customers during checkout">
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="create_is_active" value="1" checked>
+                <label class="form-check-label small fw-semibold" for="create_is_active">
+                  Active (Available for customer purchase)
+                </label>
+              </div>
+            </div>
+            <div class="col-12 text-end">
+              <button type="button" class="btn btn-secondary me-2" data-bs-toggle="collapse" data-bs-target="#createAddonCollapse">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Add-on</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Filter Bar by Event -->
+    <div class="card shadow-sm border-0 bg-white p-3 mb-3">
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2">
+        <span class="small fw-semibold text-muted">Filter Add-ons by Event:</span>
+        <div class="d-flex gap-2">
+          <select class="form-select form-select-sm" style="max-width: 320px;" onchange="if(this.value){ location.href='/admin/addons?event_id=' + this.value; } else { location.href='/admin/addons'; }">
+            <option value="">All Events ({{ events|length }})</option>
+            {% for ev in events %}
+              <option value="{{ ev.id }}" {% if selected_event_id == ev.id %}selected{% endif %}>
+                {{ ev.title }} (ID #{{ ev.id }})
+              </option>
+            {% endfor %}
+          </select>
+          {% if selected_event_id %}
+            <a href="/admin/addons" class="btn btn-sm btn-outline-secondary">Reset</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Add-ons List Table -->
+    <div class="card shadow-sm border-0 bg-white p-4">
+      {% if addons and addons|length > 0 %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Add-on</th>
+                <th>Event</th>
+                <th class="text-end">Price</th>
+                <th class="text-center">Stock</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in addons %}
+                <tr>
+                  <td>
+                    <strong class="d-block text-dark">{{ a.name }}</strong>
+                    {% if a.description %}
+                      <small class="text-muted">{{ a.description }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ a.event_title }}</span>
+                  </td>
+                  <td class="text-end fw-bold" style="color: var(--primary);">
+                    ₹{{ "%.2f"|format(a.price or 0.0) }}
+                  </td>
+                  <td class="text-center">
+                    <span class="badge {% if a.available_quantity > 10 %}bg-light text-dark border{% elif a.available_quantity > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                      {{ a.available_quantity }} units
+                    </span>
+                  </td>
+                  <td>
+                    {% if a.is_active %}
+                      <span class="badge bg-success">Active</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <!-- Edit Trigger Button -->
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAddonModal{{ a.id }}" title="Edit add-on">
+                      <i class="bi bi-pencil me-1"></i>Edit
+                    </button>
+
+                    <!-- Toggle Active Form -->
+                    <form method="POST" action="/admin/addons/{{ a.id }}/toggle" class="d-inline ms-1">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <button type="submit" class="btn btn-sm {% if a.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}" title="Toggle active status">
+                        {% if a.is_active %}Deactivate{% else %}Activate{% endif %}
+                      </button>
+                    </form>
+
+                    <!-- Delete Form -->
+                    <form method="POST" action="/admin/addons/{{ a.id }}/delete" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete add-on &quot;{{ a.name }}&quot;?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete add-on">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+
+                <!-- Edit Modal for this add-on -->
+                <div class="modal fade" id="editAddonModal{{ a.id }}" tabindex="-1" aria-labelledby="editAddonLabel{{ a.id }}" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form method="POST" action="/admin/addons/{{ a.id }}/edit">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="modal-header">
+                          <h5 class="modal-title fw-bold" id="editAddonLabel{{ a.id }}" style="color: var(--burgundy);">Edit Add-on: {{ a.name }}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-start">
+                          <div class="mb-3">
+                            <label class="form-label small fw-semibold">Add-on Name *</label>
+                            <input type="text" name="name" class="form-control" value="{{ a.name }}" required>
+                          </div>
+                          <div class="row g-2 mb-3">
+                            <div class="col-6">
+                              <label class="form-label small fw-semibold">Price (₹) *</label>
+                              <input type="number" step="0.01" min="0" name="price" class="form-control" value="{{ a.price }}" required>
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label small fw-semibold">Available Stock *</label>
+                              <input type="number" min="0" name="available_quantity" class="form-control" value="{{ a.available_quantity }}" required>
+                            </div>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label small fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="2">{{ a.description or '' }}</textarea>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="edit_active_{{ a.id }}" value="1" {% if a.is_active %}checked{% endif %}>
+                            <label class="form-check-label small fw-semibold" for="edit_active_{{ a.id }}">
+                              Active for purchase
+                            </label>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-box-seam fs-1 d-block mb-2 text-secondary"></i>
+          <h5>No Add-ons Configured</h5>
+          <p class="small text-secondary mb-3">Add merchandise, VIP packages, parking passes, or meal vouchers for your events.</p>
+          <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createAddonCollapse">
+            <i class="bi bi-plus-lg me-1"></i> Add Your First Add-on
+          </button>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

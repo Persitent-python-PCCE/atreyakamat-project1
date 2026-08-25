@@ -13,7 +13,8 @@
           <h3 class="fw-bold mb-0" style="color: var(--burgundy);">Edit Event #{{ event.id }}</h3>
           <p class="text-muted small mb-0">{{ event.title }}</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="/admin/addons?event_id={{ event.id }}" class="btn btn-outline-success btn-sm"><i class="bi bi-box-seam me-1"></i> Manage Add-ons</a>
           <a href="/admin/events/{{ event.id }}/reschedule" class="btn btn-warning btn-sm text-dark fw-semibold"><i class="bi bi-calendar-event me-1"></i> Reschedule Event</a>
           <a href="/admin/events" class="btn btn-secondary btn-sm">&larr; Back to Events</a>
         </div>

@@ -442,16 +442,6 @@ class AnalyticsDAO:
         )
         last_scan = last_scan_record[0].strftime("%I:%M %p") if last_scan_record and last_scan_record[0] else None
 
-        # Calculate Health Score
-        health = self._compute_event_health_score(
-            event=event,
-            capacity=capacity,
-            tickets_sold=tickets_sold,
-            checked_in=checked_in,
-            cancelled_count=cancelled_bookings_count,
-            total_bookings_count=total_bookings_count,
-        )
-
         # Build Activity Feed (last 10 important actions)
         activity_timeline = self._get_event_activity_timeline(event.id)
 
@@ -479,72 +469,7 @@ class AnalyticsDAO:
             "no_show_rate": no_show_rate,
             "last_scan": last_scan,
             "revenue": revenue,
-            "health_score": health["score"],
-            "health_category": health["category"],
-            "health_reasons": health["reasons"],
             "timeline": activity_timeline,
-        }
-
-    # Helper: Health score computation
-    def _compute_event_health_score(
-        self, event: Event, capacity: int, tickets_sold: int, checked_in: int, cancelled_count: int, total_bookings_count: int
-    ) -> dict:
-        """Transparent, rule-based 0-100 Event Health Score computation."""
-        # 1. Sales Occupancy Factor (0 to 40 pts)
-        sales_occ = (tickets_sold / capacity * 100.0) if capacity > 0 else 0.0
-        sales_score = min(40.0, (sales_occ / 100.0) * 40.0)
-
-        # 2. Cancellation Factor (0 to 20 pts)
-        tot_bk = total_bookings_count if total_bookings_count > 0 else (tickets_sold + cancelled_count)
-        cancellation_rate = (cancelled_count / tot_bk) if tot_bk > 0 else 0.0
-        cancel_score = max(0.0, 20.0 - (cancellation_rate * 40.0))
-
-        # 3. Timing & Velocity Factor (0 to 20 pts)
-        days_to_event = (event.event_date - date.today()).days if event.event_date else 0
-        if days_to_event > 14:
-            timing_score = 20.0 if sales_occ >= 20.0 else 15.0
-        elif days_to_event >= 0:
-            timing_score = 20.0 if sales_occ >= 50.0 else (10.0 + (sales_occ / 10.0))
-        else:
-            timing_score = 20.0 if sales_occ >= 60.0 else 12.0
-        timing_score = min(20.0, timing_score)
-
-        # 4. Live Attendance Factor (0 to 20 pts)
-        if days_to_event <= 0:
-            att_rate = (checked_in / tickets_sold) if tickets_sold > 0 else 0.0
-            attendance_score = att_rate * 20.0
-        else:
-            attendance_score = 20.0
-        attendance_score = min(20.0, attendance_score)
-
-        total_score = round(min(100.0, max(0.0, sales_score + cancel_score + timing_score + attendance_score)))
-
-        if total_score >= 80:
-            category = "Excellent"
-        elif total_score >= 60:
-            category = "Healthy"
-        elif total_score >= 40:
-            category = "Needs Attention"
-        else:
-            category = "At Risk"
-
-        reasons = []
-        reasons.append(f"{round(sales_occ, 1)}% sales occupancy ({tickets_sold}/{capacity} tickets sold)")
-        if cancellation_rate > 0.15:
-            reasons.append(f"Elevated cancellation rate ({round(cancellation_rate * 100, 1)}%)")
-        else:
-            reasons.append(f"Low cancellation rate ({round(cancellation_rate * 100, 1)}%)")
-
-        if days_to_event <= 0:
-            live_occ = (checked_in / capacity * 100.0) if capacity > 0 else 0.0
-            reasons.append(f"{round(live_occ, 1)}% live attendance ({checked_in} checked in)")
-        else:
-            reasons.append(f"Scheduled in {days_to_event} days")
-
-        return {
-            "score": int(total_score),
-            "category": category,
-            "reasons": reasons,
         }
 
     # Helper: Activity timeline

@@ -84,6 +84,9 @@ def api_reschedule_event(event_id):
         new_end_time=validated_data.get("new_end_time"),
         reason=validated_data.get("reason"),
     )
+    if result.get("success"):
+        from Services.cache_service import invalidate_analytics_cache
+        invalidate_analytics_cache()
     return jsonify(result), result.get("status", 200)
 
 

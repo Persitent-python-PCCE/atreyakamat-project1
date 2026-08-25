@@ -82,7 +82,7 @@
                 <th>Discount</th>
                 <th>Min Amount</th>
                 <th>Usage</th>
-                <th>Operational Signal</th>
+                <th>Usage Status</th>
                 <th>Status</th>
                 <th class="text-end">Actions</th>
               </tr>
@@ -124,9 +124,9 @@
                     {% elif p.max_uses and p.used_count >= p.max_uses %}
                       <span class="badge bg-danger"><i class="bi bi-x-octagon me-1"></i>Max Usage Reached</span>
                     {% elif p.max_uses and p.used_count >= (p.max_uses * 0.8) %}
-                      <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Near Max Usage</span>
+                      <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Near Limit</span>
                     {% else %}
-                      <span class="badge bg-success"><i class="bi bi-check2-circle me-1"></i>Healthy</span>
+                      <span class="badge bg-success"><i class="bi bi-check2-circle me-1"></i>Active</span>
                     {% endif %}
                   </td>
                   <td>

@@ -21,6 +21,7 @@ from Services.category_service import CategoryService
 from Services.booking_service import BookingService
 from Services.seat_service import SeatService
 from Services.promo_service import PromoCodeService
+from Services.event_addon_service import EventAddonService
 from Services.analytics_service import AnalyticsService
 from Controller.auth_guards import get_current_user_info
 
@@ -32,6 +33,7 @@ category_service = CategoryService()
 booking_service = BookingService()
 seat_service = SeatService()
 promo_service = PromoCodeService()
+event_addon_service = EventAddonService()
 analytics_service = AnalyticsService()
 
 
@@ -283,7 +285,7 @@ def reschedule_event(event_id):
     from Services.event_reschedule_service import EventRescheduleService
     reschedule_service = EventRescheduleService()
 
-    event_res = event_service.get_event_by_id(event_id)
+    event_res = event_service.get_event_by_id(event_id, include_unpublished=True)
     if not event_res.get("success"):
         return render_template("error.html", message="Event not found", status_code=404), 404
 
@@ -312,8 +314,11 @@ def reschedule_event(event_id):
                 reason=reason,
             )
             if result.get("success"):
+                from Services.cache_service import invalidate_analytics_cache
+                invalidate_analytics_cache()
+
                 summary = result.get("data", {})
-                event_res = event_service.get_event_by_id(event_id)
+                event_res = event_service.get_event_by_id(event_id, include_unpublished=True)
                 event = event_res.get("data", event)
                 history_res = reschedule_service.get_reschedule_history(event_id)
                 history = history_res.get("data", []) if history_res.get("success") else []
@@ -689,3 +694,148 @@ def admin_delete_promo(promo_id):
     if not res.get("success"):
         return redirect(url_for("web_admin_bp.admin_promos", error=res.get("message")))
     return redirect(url_for("web_admin_bp.admin_promos", success="Promo code deleted successfully"))
+
+
+# ==================================================================== #
+# ADD-ONS CRUD MANAGEMENT
+# ==================================================================== #
+
+@web_admin_bp.route("/addons")
+def admin_addons():
+    """Event Add-ons management overview."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    events = event_service.get_all_events(include_unpublished=True).get("data", [])
+    event_map = {e["id"]: e["title"] for e in events}
+
+    event_id = request.args.get("event_id", type=int)
+    if event_id:
+        addons = event_addon_service.get_addons_by_event(event_id).get("data", [])
+    else:
+        addons = event_addon_service.get_all_addons().get("data", [])
+
+    for a in addons:
+        a["event_title"] = event_map.get(a.get("event_id"), f"Event #{a.get('event_id')}")
+
+    error = request.args.get("error")
+    success = request.args.get("success")
+
+    return render_template(
+        "admin/addons.html",
+        addons=addons,
+        events=events,
+        selected_event_id=event_id,
+        error=error,
+        success=success,
+    )
+
+
+@web_admin_bp.route("/addons/create", methods=["POST"])
+def admin_create_addon():
+    """Create a new event add-on."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    name = request.form.get("name", "").strip()
+    event_id_str = request.form.get("event_id", "").strip()
+    description = request.form.get("description", "").strip()
+    price_str = request.form.get("price", "0")
+    qty_str = request.form.get("available_quantity", "0")
+    is_active = request.form.get("is_active") in ["1", "true", "on", True]
+
+    try:
+        event_id = int(event_id_str)
+        price = float(price_str) if price_str else 0.0
+        qty = int(qty_str) if qty_str else 0
+    except ValueError:
+        return redirect(url_for("web_admin_bp.admin_addons", error="Invalid numeric values for event, price, or quantity"))
+
+    data = {
+        "event_id": event_id,
+        "name": name,
+        "description": description or None,
+        "price": price,
+        "available_quantity": qty,
+        "is_active": is_active,
+    }
+
+    res = event_addon_service.create_addon(data)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_addons", event_id=event_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.admin_addons", event_id=event_id, success=f"Add-on '{name}' created successfully"))
+
+
+@web_admin_bp.route("/addons/<int:addon_id>/edit", methods=["POST"])
+def admin_edit_addon(addon_id):
+    """Edit an existing event add-on."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    addon_res = event_addon_service.get_addon_by_id(addon_id)
+    if not addon_res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_addons", error="Add-on not found"))
+
+    addon = addon_res.get("data", {})
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+    price_str = request.form.get("price", "0")
+    qty_str = request.form.get("available_quantity", "0")
+    is_active = request.form.get("is_active") in ["1", "true", "on", True]
+
+    try:
+        price = float(price_str) if price_str else 0.0
+        qty = int(qty_str) if qty_str else 0
+    except ValueError:
+        return redirect(url_for("web_admin_bp.admin_addons", error="Invalid price or quantity format"))
+
+    data = {
+        "name": name,
+        "description": description or None,
+        "price": price,
+        "available_quantity": qty,
+        "is_active": is_active,
+    }
+
+    res = event_addon_service.update_addon(addon_id, data)
+    event_id = addon.get("event_id")
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_addons", event_id=event_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.admin_addons", event_id=event_id, success=f"Add-on '{name}' updated successfully"))
+
+
+@web_admin_bp.route("/addons/<int:addon_id>/toggle", methods=["POST"])
+def admin_toggle_addon(addon_id):
+    """Toggle add-on active status."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    addon_res = event_addon_service.get_addon_by_id(addon_id)
+    if not addon_res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_addons", error="Add-on not found"))
+
+    addon = addon_res.get("data", {})
+    new_state = not addon.get("is_active", True)
+    event_addon_service.update_addon(addon_id, {"is_active": new_state})
+    status_label = "activated" if new_state else "deactivated"
+    return redirect(url_for("web_admin_bp.admin_addons", event_id=addon.get("event_id"), success=f"Add-on {status_label}"))
+
+
+@web_admin_bp.route("/addons/<int:addon_id>/delete", methods=["POST"])
+def admin_delete_addon(addon_id):
+    """Delete an event add-on."""
+    admin_user, err_resp = _require_admin()
+    if err_resp:
+        return err_resp
+
+    addon_res = event_addon_service.get_addon_by_id(addon_id)
+    event_id = addon_res.get("data", {}).get("event_id") if addon_res.get("success") else None
+
+    res = event_addon_service.delete_addon(addon_id)
+    if not res.get("success"):
+        return redirect(url_for("web_admin_bp.admin_addons", event_id=event_id, error=res.get("message")))
+    return redirect(url_for("web_admin_bp.admin_addons", event_id=event_id, success="Add-on deleted successfully"))

@@ -314,15 +314,7 @@ class TestFinalProjectQA:
         print("[PASS] No-show calculation")
 
         # ------------------------------------------------------------------ #
-        # 19. Event Health Score
-        # ------------------------------------------------------------------ #
-        assert 0 <= ops_data["health_score"] <= 100
-        assert ops_data["health_category"] in ("Excellent", "Healthy", "Needs Attention", "At Risk")
-        assert len(ops_data["health_reasons"]) >= 2
-        print("[PASS] Event health score")
-
-        # ------------------------------------------------------------------ #
-        # 20. Admin Analytics & Caching
+        # 19. Admin Analytics & Caching
         # ------------------------------------------------------------------ #
         analytics1 = client.get("/api/admin/analytics?days=30", headers=admin_headers)
         assert analytics1.status_code == 200

@@ -105,3 +105,40 @@ class TestEventRescheduleService:
         assert res["success"] is False
         assert res["status"] == 400
         assert "past" in res["message"]
+
+    def test_reschedule_unpublished_event(self):
+        """WHY: Unpublished draft events can also be rescheduled by an admin."""
+        self.event.status = "unpublished"
+        self.db.commit()
+
+        new_date = str(date.today() + timedelta(days=14))
+        res = self.reschedule_service.reschedule_event(
+            event_id=self.event.id,
+            admin_id=self.admin.id,
+            new_event_date=new_date,
+            new_start_time="19:30:00",
+            new_end_time="22:30",
+            reason="Draft adjustment",
+            password="secret123",
+        )
+        assert res["success"] is True
+        assert res["status"] == 200
+
+        history = self.reschedule_service.get_reschedule_history(self.event.id)
+        assert history["success"] is True
+        assert len(history["data"]) >= 1
+
+    def test_reschedule_flexible_time_formats(self):
+        """WHY: Validates that flexible time and date formats are parsed cleanly."""
+        new_date = date.today() + timedelta(days=30)
+        res = self.reschedule_service.reschedule_event(
+            event_id=self.event.id,
+            admin_id=self.admin.id,
+            new_event_date=new_date.strftime("%Y-%m-%d"),
+            new_start_time="7:00 PM",
+            reason="A" * 300,  # Long reason should be safely truncated
+            password="secret123",
+        )
+        assert res["success"] is True
+        assert res["status"] == 200
+

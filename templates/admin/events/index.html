@@ -59,6 +59,9 @@
                       <a href="/admin/events/{{ e.id }}/operations" class="btn btn-sm btn-info text-white fw-semibold" title="Event Operations Dashboard">
                         <i class="bi bi-speedometer2 me-1"></i>Operations
                       </a>
+                      <a href="/admin/addons?event_id={{ e.id }}" class="btn btn-sm btn-outline-success" title="Manage event add-ons">
+                        <i class="bi bi-box-seam me-1"></i>Add-ons
+                      </a>
                       <a href="/admin/events/{{ e.id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit event">Edit</a>
                       <a href="/admin/events/{{ e.id }}/reschedule" class="btn btn-sm btn-outline-warning text-dark fw-semibold" title="Reschedule event date/time">Reschedule</a>
                       {% if e.status == 'published' %}

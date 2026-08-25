@@ -42,82 +42,38 @@
     </div>
   </div>
 
-  <!-- Row 1: Event Health Score & Core KPIs -->
+  <!-- Row 1: Core Event Metrics -->
   <div class="row g-3 mb-4">
-    <!-- Health Score Card -->
-    <div class="col-lg-4 col-md-12">
-      <div class="card shadow-sm border-0 h-100 p-3" style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="text-muted small fw-semibold text-uppercase">Event Health Score</span>
-          {% if ops.health_score >= 80 %}
-            <span class="badge bg-success px-2 py-1"><i class="bi bi-shield-check me-1"></i>{{ ops.health_category }}</span>
-          {% elif ops.health_score >= 60 %}
-            <span class="badge bg-primary px-2 py-1"><i class="bi bi-check-circle me-1"></i>{{ ops.health_category }}</span>
-          {% elif ops.health_score >= 40 %}
-            <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-exclamation-circle me-1"></i>{{ ops.health_category }}</span>
-          {% else %}
-            <span class="badge bg-danger px-2 py-1"><i class="bi bi-shield-slash me-1"></i>{{ ops.health_category }}</span>
-          {% endif %}
-        </div>
-        <div class="d-flex align-items-baseline gap-2 mb-2">
-          <h2 class="display-6 fw-bold mb-0 text-dark">{{ ops.health_score }}</h2>
-          <span class="text-muted fs-6">/ 100</span>
-        </div>
-        <div class="progress mb-3" style="height: 8px;">
-          <div class="progress-bar {% if ops.health_score >= 80 %}bg-success{% elif ops.health_score >= 60 %}bg-primary{% elif ops.health_score >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
-               role="progressbar" 
-               style="width: {{ ops.health_score }}%;" 
-               aria-valuenow="{{ ops.health_score }}" 
-               aria-valuemin="0" 
-               aria-valuemax="100">
-          </div>
-        </div>
-        <div class="mt-auto">
-          <div class="small fw-semibold text-secondary mb-1">Operational Signals:</div>
-          <ul class="list-unstyled small mb-0 d-flex flex-column gap-1">
-            {% for reason in ops.health_reasons %}
-              <li class="text-muted"><i class="bi bi-arrow-right-short text-primary me-1"></i>{{ reason }}</li>
-            {% endfor %}
-          </ul>
-        </div>
+    <!-- Tickets Sold -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="card shadow-sm border-0 p-3 text-center h-100" style="border-left: 4px solid var(--primary) !important;">
+        <span class="text-muted small fw-semibold text-uppercase mb-1">Tickets Sold</span>
+        <h3 class="fw-bold mb-0 text-dark">{{ ops.tickets_sold }}</h3>
+        <span class="text-muted small mt-auto">Capacity: {{ ops.capacity }}</span>
       </div>
     </div>
-
-    <!-- Capacity & Attendance Metrics -->
-    <div class="col-lg-8 col-md-12">
-      <div class="row g-3 h-100">
-        <!-- Tickets Sold -->
-        <div class="col-sm-6 col-md-3">
-          <div class="card shadow-sm border-0 p-3 text-center h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-1">Tickets Sold</span>
-            <h3 class="fw-bold mb-0 text-dark">{{ ops.tickets_sold }}</h3>
-            <span class="text-muted small mt-auto">Capacity: {{ ops.capacity }}</span>
-          </div>
-        </div>
-        <!-- Checked In -->
-        <div class="col-sm-6 col-md-3">
-          <div class="card shadow-sm border-0 p-3 text-center h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-1">Checked In</span>
-            <h3 class="fw-bold mb-0 text-success">{{ ops.checked_in }}</h3>
-            <span class="text-muted small mt-auto">Live Attendance</span>
-          </div>
-        </div>
-        <!-- Remaining -->
-        <div class="col-sm-6 col-md-3">
-          <div class="card shadow-sm border-0 p-3 text-center h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-1">Remaining</span>
-            <h3 class="fw-bold mb-0 text-secondary">{{ ops.remaining_capacity }}</h3>
-            <span class="text-muted small mt-auto">Available Seats</span>
-          </div>
-        </div>
-        <!-- Revenue -->
-        <div class="col-sm-6 col-md-3">
-          <div class="card shadow-sm border-0 p-3 text-center h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-1">Gross Revenue</span>
-            <h3 class="fw-bold mb-0 text-primary">₹{{ "%.2f"|format(ops.revenue) }}</h3>
-            <span class="text-muted small mt-auto">{{ ops.cancellations }} Cancellations</span>
-          </div>
-        </div>
+    <!-- Checked In -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="card shadow-sm border-0 p-3 text-center h-100" style="border-left: 4px solid #28a745 !important;">
+        <span class="text-muted small fw-semibold text-uppercase mb-1">Checked In</span>
+        <h3 class="fw-bold mb-0 text-success">{{ ops.checked_in }}</h3>
+        <span class="text-muted small mt-auto">Live Attendance</span>
+      </div>
+    </div>
+    <!-- Remaining -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="card shadow-sm border-0 p-3 text-center h-100" style="border-left: 4px solid #6c757d !important;">
+        <span class="text-muted small fw-semibold text-uppercase mb-1">Remaining</span>
+        <h3 class="fw-bold mb-0 text-secondary">{{ ops.remaining_capacity }}</h3>
+        <span class="text-muted small mt-auto">Available Seats</span>
+      </div>
+    </div>
+    <!-- Revenue -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="card shadow-sm border-0 p-3 text-center h-100" style="border-left: 4px solid var(--burgundy) !important;">
+        <span class="text-muted small fw-semibold text-uppercase mb-1">Gross Revenue</span>
+        <h3 class="fw-bold mb-0 text-primary">₹{{ "%.2f"|format(ops.revenue) }}</h3>
+        <span class="text-muted small mt-auto">{{ ops.cancellations }} Cancellations</span>
       </div>
     </div>
   </div>

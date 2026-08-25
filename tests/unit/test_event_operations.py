@@ -174,11 +174,6 @@ class TestEventOperations:
         assert data["revenue"] == 400.00
         assert data["last_scan"] is not None
 
-        # Health Score & Categories
-        assert 0 <= data["health_score"] <= 100
-        assert data["health_category"] in ("Excellent", "Healthy", "Needs Attention", "At Risk")
-        assert len(data["health_reasons"]) >= 2
-
         # Timeline
         assert len(data["timeline"]) >= 2
         actions = [item["action"] for item in data["timeline"]]

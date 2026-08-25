@@ -133,7 +133,6 @@
                 <th class="text-center">Bookings</th>
                 <th class="text-center">Occupancy</th>
                 <th class="text-end">Revenue</th>
-                <th class="text-end">Operations</th>
               </tr>
             </thead>
             <tbody>
@@ -160,11 +159,6 @@
                     {% endif %}
                   </td>
                   <td class="text-end fw-bold" style="color: var(--primary);">₹{{ "%.2f"|format(ev.revenue) }}</td>
-                  <td class="text-end">
-                    <a href="/admin/events/{{ ev.id }}/operations" class="btn btn-sm btn-outline-info">
-                      <i class="bi bi-speedometer2 me-1"></i>Ops
-                    </a>
-                  </td>
                 </tr>
               {% endfor %}
             </tbody>

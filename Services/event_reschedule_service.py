@@ -40,22 +40,40 @@ def reschedule_to_dict(r):
 
 
 def _parse_date(val):
+    if isinstance(val, datetime):
+        return val.date()
     if isinstance(val, date):
         return val
     if isinstance(val, str) and val.strip():
-        return datetime.strptime(val.strip(), "%Y-%m-%d").date()
+        val_clean = val.strip()
+        for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d"):
+            try:
+                return datetime.strptime(val_clean, fmt).date()
+            except ValueError:
+                pass
+        try:
+            return date.fromisoformat(val_clean)
+        except Exception:
+            pass
     return None
 
 
 def _parse_time(val):
+    if isinstance(val, datetime):
+        return val.time()
     if isinstance(val, dt_time):
         return val
     if isinstance(val, str) and val.strip():
         t_str = val.strip()
-        if len(t_str) == 5:
-            return datetime.strptime(t_str, "%H:%M").time()
-        elif len(t_str) == 8:
-            return datetime.strptime(t_str, "%H:%M:%S").time()
+        for fmt in ("%H:%M", "%H:%M:%S", "%I:%M %p", "%I:%M%p", "%I:%M:%S %p", "%I:%M:%S%p", "%H:%M:%S.%f"):
+            try:
+                return datetime.strptime(t_str, fmt).time()
+            except ValueError:
+                pass
+        try:
+            return dt_time.fromisoformat(t_str)
+        except Exception:
+            pass
     return None
 
 
@@ -106,7 +124,11 @@ class EventRescheduleService:
         if parsed_new_date < today:
             return fail(f"New event date ({parsed_new_date}) cannot be in the past.", 400)
 
-        if parsed_new_date == event.event_date and parsed_new_start_time == event.start_time:
+        # Check if new schedule is identical to current schedule
+        same_date = parsed_new_date == event.event_date
+        same_start = parsed_new_start_time == event.start_time
+        same_end = (parsed_new_end_time == event.end_time) or (not parsed_new_end_time and not event.end_time)
+        if same_date and same_start and same_end:
             return fail("New date and time are identical to the current schedule.", 400)
 
         # 4. Atomic Database Transaction
@@ -125,7 +147,8 @@ class EventRescheduleService:
                 event.end_time = parsed_new_end_time
             db.session.add(event)
 
-            # 4b. Create EventReschedule Audit Row
+            # 4b. Create EventReschedule Audit Row (safe truncation to 255 chars)
+            clean_reason = reason.strip()[:255] if (reason and reason.strip()) else None
             reschedule_row = EventReschedule(
                 event_id=event.id,
                 admin_id=admin.id,
@@ -133,13 +156,13 @@ class EventRescheduleService:
                 old_start_time=old_start_time,
                 new_event_date=parsed_new_date,
                 new_start_time=parsed_new_start_time,
-                reason=reason.strip() if reason else None,
+                reason=clean_reason,
                 rescheduled_at=datetime.utcnow(),
             )
             db.session.add(reschedule_row)
 
             # 4c. Load all confirmed bookings for this event
-            confirmed_bookings = self.booking_dao.get_event_bookings(event.id)
+            confirmed_bookings = self.booking_dao.get_event_bookings(event.id) or []
             affected_bookings = [b for b in confirmed_bookings if b.status == "confirmed"]
 
             # Reactivate any tickets that were marked expired due to past date
@@ -150,16 +173,19 @@ class EventRescheduleService:
                     t.expired_at = None
                     db.session.add(t)
 
-            # 4d. Create in-app Notifications for affected customers
+            # 4d. Create in-app Notifications for affected customers (title truncated safely to 150 chars)
             notified_user_ids = set()
             for b in affected_bookings:
                 if b.user_id not in notified_user_ids:
+                    notif_title = f"Event Rescheduled: {event.title}"
+                    if len(notif_title) > 150:
+                        notif_title = notif_title[:147] + "..."
                     notif = Notification(
                         user_id=b.user_id,
-                        title=f"Event Rescheduled: {event.title}",
+                        title=notif_title,
                         message=(
                             f"Your event '{event.title}' has been rescheduled from {old_date_str} at {old_time_str} "
-                            f"to {new_date_str} at {new_time_str}. Reason: {reason or 'Schedule updated by organizer'}. "
+                            f"to {new_date_str} at {new_time_str}. Reason: {clean_reason or 'Schedule updated by organizer'}. "
                             f"Your existing tickets and QR codes remain fully valid!"
                         ),
                         notification_type="event_reschedule",
