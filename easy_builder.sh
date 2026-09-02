@@ -3,8 +3,8 @@ set -e
 
 echo "=== Easy Builder ==="
 echo "1. Installing dependencies..."
-pip install --break-system-packages -r requirements.txt
-pip install --break-system-packages pytest
+python3 -m pip install --break-system-packages -r requirements.txt
+python3 -m pip install --break-system-packages pytest
 
 echo "2. Running Tests..."
 python3 -m pytest || pytest

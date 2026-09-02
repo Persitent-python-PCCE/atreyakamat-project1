@@ -11,8 +11,8 @@ pipeline {
             steps {
                 sh '''
                     export PATH=$PATH:$HOME/.local/bin
-                    pip install --break-system-packages -r requirements.txt
-                    pip install --break-system-packages pytest
+                    python3 -m pip install --break-system-packages -r requirements.txt
+                    python3 -m pip install --break-system-packages pytest
                 '''
             }
         }
