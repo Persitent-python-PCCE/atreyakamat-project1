@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mysql:latest
+    container_name: seatmeup-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: atreya
+      MYSQL_DATABASE: seatmeup
+      MYSQL_USER: atreya
+      MYSQL_PASSWORD: atreya
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - seatmeup-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-patreya"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  web:
+    image: atreya7/seatmeup:latest
+    container_name: seatmeup-web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://atreya:atreya@db:3306/seatmeup
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: atreya
+      DB_PASSWORD: atreya
+      DB_NAME: seatmeup
+      FLASK_ENV: production
+      SECRET_KEY: seatmeup-secure-production-secret-key-2026
+      JWT_SECRET_KEY: seatmeup-secure-jwt-secret-key-2026
+      USE_PROXY_FIX: "true"
+    volumes:
+      - seatmeup-uploads:/app/uploads
+      - seatmeup-static-uploads:/app/static/uploads
+      - seatmeup-tickets:/app/static/generated_tickets
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - seatmeup-net
+
+volumes:
+  mysql-data:
+    driver: local
+  seatmeup-uploads:
+    driver: local
+  seatmeup-static-uploads:
+    driver: local
+  seatmeup-tickets:
+    driver: local
+
+networks:
+  seatmeup-net:
+    driver: bridge

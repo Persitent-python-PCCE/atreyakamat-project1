@@ -30,5 +30,11 @@ def index():
 
 @home_bp.route("/health")
 def health():
-    """Simple health check endpoint."""
-    return {"status": "ok", "service": "SeatMeUp"}
+    """Health check endpoint for Kubernetes liveness & readiness probes."""
+    return {
+        "status": "ok",
+        "service": "SeatMeUp",
+        "version": "2.0.0",
+        "deployment": "rolling-update-v2",
+    }
+

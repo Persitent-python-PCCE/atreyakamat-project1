@@ -29,39 +29,108 @@ from models.promo_code import PromoCode
 from models.user import User
 
 
+import shutil
+
 def seed_data():
     app = create_app()
     with app.app_context():
+        db.create_all()
         print("=" * 65)
         print("SEATMEUP — SEEDING DEMO DATA")
         print("=" * 65)
 
+        # Copy demo event images to static uploads directory
+        src_dir = os.path.join(os.path.dirname(__file__), "..", "event_images")
+        dest_dir = os.path.join(app.root_path, "static", "uploads", "event_posters")
+        os.makedirs(dest_dir, exist_ok=True)
+        if os.path.exists(src_dir):
+            for filename in os.listdir(src_dir):
+                if filename.endswith(".jpg") or filename.endswith(".webp"):
+                    shutil.copy2(os.path.join(src_dir, filename), os.path.join(dest_dir, filename))
+
+
         # ---------------------------------------------------------
-        # 1. Users (Admin + Customers)
+        # 1. Users (Admin + Goan Customers - Password for all: atreya)
         # ---------------------------------------------------------
         users_data = [
             {
-                "name": "Admin User",
-                "email": "admin@seatmeup.com",
-                "password": "Admin@123",
+                "name": "Atreya Kamat",
+                "email": "atreya@a.com",
+                "password": "atreya",
                 "role": "admin",
-                "phone": "+91 99999 00001",
-                "reward_balance": 0.00,
+                "phone": "+91 98221 12345",
+                "reward_balance": 500.00,
             },
             {
-                "name": "Alice Johnson",
-                "email": "customer@example.com",
-                "password": "Customer@123",
+                "name": "Savio Fernandes",
+                "email": "savio.fernandes@example.com",
+                "password": "atreya",
                 "role": "customer",
-                "phone": "+91 98765 43210",
+                "phone": "+91 98221 54321",
+                "reward_balance": 150.00,
+            },
+            {
+                "name": "Rohan Naik",
+                "email": "rohan.naik@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 94220 11223",
                 "reward_balance": 50.00,
             },
             {
-                "name": "John Doe",
-                "email": "john.doe@example.com",
-                "password": "Customer@123",
+                "name": "Maria D'Souza",
+                "email": "maria.dsouza@example.com",
+                "password": "atreya",
                 "role": "customer",
-                "phone": "+91 91234 56789",
+                "phone": "+91 98501 33445",
+                "reward_balance": 75.00,
+            },
+            {
+                "name": "Rahul Kamat",
+                "email": "rahul.kamat@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 98224 99887",
+                "reward_balance": 100.00,
+            },
+            {
+                "name": "Pritam Gaonkar",
+                "email": "pritam.gaonkar@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 94238 66778",
+                "reward_balance": 0.00,
+            },
+            {
+                "name": "Tanvi Prabhu",
+                "email": "tanvi.prabhu@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 98231 77889",
+                "reward_balance": 25.00,
+            },
+            {
+                "name": "Sheldon Mascarenhas",
+                "email": "sheldon.m@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 98221 88990",
+                "reward_balance": 50.00,
+            },
+            {
+                "name": "Ananya Shenvi",
+                "email": "ananya.shenvi@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 98229 44556",
+                "reward_balance": 0.00,
+            },
+            {
+                "name": "Kevin Sequeira",
+                "email": "kevin.sequeira@example.com",
+                "password": "atreya",
+                "role": "customer",
+                "phone": "+91 98223 66771",
                 "reward_balance": 0.00,
             },
         ]
@@ -84,10 +153,16 @@ def seed_data():
                 seeded_users[u_data["email"]] = user
                 print(f"  [+] Created User: {u_data['email']} ({u_data['role']})")
             else:
+                existing.name = u_data["name"]
+                existing.password_hash = generate_password_hash(u_data["password"])
+                existing.role = u_data["role"]
+                existing.phone = u_data["phone"]
+                existing.reward_balance = u_data["reward_balance"]
+                db.session.flush()
                 seeded_users[u_data["email"]] = existing
-                print(f"  [.] User exists: {u_data['email']}")
+                print(f"  [.] User updated/exists: {u_data['email']}")
 
-        admin_user = seeded_users["admin@seatmeup.com"]
+        admin_user = seeded_users["atreya@a.com"]
 
         # ---------------------------------------------------------
         # 2. Categories
@@ -556,14 +631,15 @@ def seed_data():
         from models.ticket import Ticket
         import uuid
 
-        alice = seeded_users.get("customer@example.com")
-        john = seeded_users.get("john.doe@example.com")
+        savio = seeded_users.get("savio.fernandes@example.com")
+        rohan = seeded_users.get("rohan.naik@example.com")
+        maria = seeded_users.get("maria.dsouza@example.com")
 
-        # Booking 1: Alice -> Tropical Purple Party
+        # Booking 1: Savio -> Tropical Purple Party
         tp_event = Event.query.filter_by(title="Tropical Purple Party").first()
-        if alice and tp_event and not Booking.query.filter_by(booking_reference="SMU-DEMO-TP01").first():
+        if savio and tp_event and not Booking.query.filter_by(booking_reference="SMU-DEMO-TP01").first():
             b1 = Booking(
-                user_id=alice.id,
+                user_id=savio.id,
                 event_id=tp_event.id,
                 booking_reference="SMU-DEMO-TP01",
                 total_amount=1035.00,
@@ -604,13 +680,13 @@ def seed_data():
                 issued_at=now - timedelta(days=2),
             )
             db.session.add(t1)
-            print(f"  [+] Created Demo Booking: {b1.booking_reference} for {alice.name}")
+            print(f"  [+] Created Demo Booking: {b1.booking_reference} for {savio.name}")
 
-        # Booking 2: John Doe -> Street Fair 2028
+        # Booking 2: Rohan Naik -> Street Fair 2028
         sf_event = Event.query.filter_by(title="Street Fair 2028").first()
-        if john and sf_event and not Booking.query.filter_by(booking_reference="SMU-DEMO-SF01").first():
+        if rohan and sf_event and not Booking.query.filter_by(booking_reference="SMU-DEMO-SF01").first():
             b2 = Booking(
-                user_id=john.id,
+                user_id=rohan.id,
                 event_id=sf_event.id,
                 booking_reference="SMU-DEMO-SF01",
                 total_amount=450.00,
@@ -649,16 +725,16 @@ def seed_data():
                 issued_at=now - timedelta(days=1),
             )
             db.session.add(t2)
-            print(f"  [+] Created Demo Booking: {b2.booking_reference} for {john.name}")
+            print(f"  [+] Created Demo Booking: {b2.booking_reference} for {rohan.name}")
 
-        # Booking 3: Alice -> Avery Turns 26: Birthday Bash (Seated)
+        # Booking 3: Maria D'Souza -> Avery Turns 26: Birthday Bash (Seated)
         av_event = Event.query.filter_by(title="Avery Turns 26: Birthday Bash").first()
-        if alice and av_event and not Booking.query.filter_by(booking_reference="SMU-DEMO-AV01").first():
+        if maria and av_event and not Booking.query.filter_by(booking_reference="SMU-DEMO-AV01").first():
             bh_venue = Venue.query.filter_by(name="Borcelle Hall").first()
             bh_seats = Seat.query.filter_by(venue_id=bh_venue.id).all() if bh_venue else []
             if bh_seats:
                 b3 = Booking(
-                    user_id=alice.id,
+                    user_id=maria.id,
                     event_id=av_event.id,
                     booking_reference="SMU-DEMO-AV01",
                     total_amount=2200.00,
@@ -706,17 +782,24 @@ def seed_data():
                     issued_at=now - timedelta(hours=12),
                 )
                 db.session.add(t3)
-                print(f"  [+] Created Demo Booking: {b3.booking_reference} for {alice.name}")
+                print(f"  [+] Created Demo Booking: {b3.booking_reference} for {maria.name}")
 
         db.session.commit()
 
         print("\n" + "=" * 65)
         print("SEEDING COMPLETE! READY FOR DEMO & TESTING")
         print("=" * 65)
-        print("\nDEMO USER CREDENTIALS:")
-        print("  Admin:     admin@seatmeup.com    / Admin@123    (Full Admin Access)")
-        print("  Customer:  customer@example.com  / Customer@123 (Reward Balance: Rs. 50.00)")
-        print("  Customer:  john.doe@example.com  / Customer@123 (Fresh Customer)")
+        print("\nUSER CREDENTIALS (PASSWORD FOR ALL: atreya):")
+        print("  Admin:     atreya@a.com                  / atreya (Full Admin Access)")
+        print("  Customer:  savio.fernandes@example.com   / atreya (Reward Balance: Rs. 150.00)")
+        print("  Customer:  rohan.naik@example.com        / atreya (Reward Balance: Rs. 50.00)")
+        print("  Customer:  maria.dsouza@example.com      / atreya (Reward Balance: Rs. 75.00)")
+        print("  Customer:  rahul.kamat@example.com       / atreya (Reward Balance: Rs. 100.00)")
+        print("  Customer:  pritam.gaonkar@example.com    / atreya (Fresh Customer)")
+        print("  Customer:  tanvi.prabhu@example.com      / atreya (Reward Balance: Rs. 25.00)")
+        print("  Customer:  sheldon.m@example.com         / atreya (Reward Balance: Rs. 50.00)")
+        print("  Customer:  ananya.shenvi@example.com     / atreya (Fresh Customer)")
+        print("  Customer:  kevin.sequeira@example.com    / atreya (Fresh Customer)")
         print("\nACTIVE PROMO CODES:")
         print("  WELCOME10  -> 10% off (No minimum spend)")
         print("  SAVE200    -> Rs. 200 off (Min spend Rs. 1,000)")
@@ -726,3 +809,4 @@ def seed_data():
 
 if __name__ == "__main__":
     seed_data()
+

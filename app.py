@@ -84,6 +84,18 @@ def create_app(config_class=None):
     app.config.setdefault("CACHE_DEFAULT_TIMEOUT", 60)
     cache.init_app(app)
 
+    # Auto-initialize database schema & seed demo data if database is fresh
+    with app.app_context():
+        try:
+            db.create_all()
+            from models.user import User
+            if not User.query.first():
+                from scripts.seed_demo_data import seed_data
+                seed_data()
+        except Exception as e:
+            logger.warning(f"Database auto-init notice: {e}")
+
+
     # Apply ProxyFix for reverse proxies (Cloudflare Tunnel / Gunicorn) if enabled
     if app.config.get("USE_PROXY_FIX"):
         # x_for=1, x_proto=1, x_host=1, x_prefix=1 for trusted single-proxy reverse setups (Cloudflare Tunnel)
