@@ -54,6 +54,7 @@ pipeline {
             steps {
                 script {
                     try {
+                        //change
                         withCredentials([
                             usernamePassword(
                                 credentialsId: 'dockerhub-credentials', 
