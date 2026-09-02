@@ -47,21 +47,27 @@ pipeline {
         }
         stage('Push Docker Image') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials', 
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD')]) {
-                            sh '''
-                                export PATH=$PATH:$HOME/.local/bin:$(pwd)/docker
-                                if [ "$(cat .skip_docker)" = "true" ]; then
-                                    echo "Skipping Docker Push because daemon is unavailable."
-                                else
-                                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                                    docker tag seatmeup:latest atreya7/seatmeup:latest
-                                    docker push atreya7/seatmeup:latest
-                                fi
-                            '''
+                script {
+                    try {
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: 'dockerhub-credentials', 
+                                usernameVariable: 'DOCKER_USERNAME',
+                                passwordVariable: 'DOCKER_PASSWORD')]) {
+                                    sh '''
+                                        export PATH=$PATH:$HOME/.local/bin:$(pwd)/docker
+                                        if [ -f .skip_docker ] && [ "$(cat .skip_docker)" = "true" ]; then
+                                            echo "Skipping Docker Push because daemon is unavailable."
+                                        else
+                                            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                                            docker tag seatmeup:latest atreya7/seatmeup:latest
+                                            docker push atreya7/seatmeup:latest
+                                        fi
+                                    '''
+                        }
+                    } catch (Exception e) {
+                        echo "WARNING: Could not find credentials entry with ID 'dockerhub-credentials'. Skipping Docker Push."
+                    }
                 }
             }
         }
