@@ -2,6 +2,7 @@ pipeline {
     agent any
     triggers{
         githubPush()
+        //cahnge
     }
     stages {
         stage('Build') {
