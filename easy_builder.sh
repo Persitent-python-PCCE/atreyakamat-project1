@@ -17,16 +17,21 @@ if ! command -v docker &> /dev/null; then
     export PATH=$PATH:$(pwd)/docker
 fi
 
-echo "4. Building Docker Image..."
-docker build -t seatmeup:latest .
-
-if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
-    echo "5. Pushing Docker Image..."
-    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    docker tag seatmeup:latest atreya7/seatmeup:latest
-    docker push atreya7/seatmeup:latest
+echo "4. Checking Docker Daemon..."
+if ! docker info > /dev/null 2>&1; then
+    echo "WARNING: Docker daemon is not accessible. Skipping image build and push."
 else
-    echo "Skipping push (DOCKER_USERNAME and DOCKER_PASSWORD not set)."
+    echo "5. Building Docker Image..."
+    docker build -t seatmeup:latest .
+
+    if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
+        echo "6. Pushing Docker Image..."
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        docker tag seatmeup:latest atreya7/seatmeup:latest
+        docker push atreya7/seatmeup:latest
+    else
+        echo "Skipping push (DOCKER_USERNAME and DOCKER_PASSWORD not set)."
+    fi
 fi
 
 echo "=== Build Complete ==="
