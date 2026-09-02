@@ -11,6 +11,11 @@ pipeline {
             steps {
                 sh '''
                     export PATH=$PATH:$HOME/.local/bin
+                    if ! python3 -c "import pip" &> /dev/null; then
+                        echo "pip not found. Installing via get-pip.py..."
+                        curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                        python3 get-pip.py --break-system-packages
+                    fi
                     python3 -m pip install --break-system-packages -r requirements.txt
                     python3 -m pip install --break-system-packages pytest
                 '''
