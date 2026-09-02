@@ -10,10 +10,6 @@ pipeline {
         stage('Installing Dependencies') {
             steps {
                 sh '''
-                    apt install python3.13-venv
-                    python3 -m venv venv
-                    source venv/bin/activate
-                    pip install --upgrade pip
                     pip install --break-system-packages -r requirements.txt
                 '''
             }
