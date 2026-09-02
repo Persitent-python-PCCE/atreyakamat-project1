@@ -10,13 +10,18 @@ pipeline {
         stage('Installing Dependencies') {
             steps {
                 sh '''
+                    export PATH=$PATH:$HOME/.local/bin
                     pip install --break-system-packages -r requirements.txt
+                    pip install --break-system-packages pytest
                 '''
             }
         }
         stage('Test') {
             steps {
-                sh 'pytest'
+                sh '''
+                    export PATH=$PATH:$HOME/.local/bin
+                    python3 -m pytest || pytest
+                '''
             }
         }
         stage('Build Docker Image') {
