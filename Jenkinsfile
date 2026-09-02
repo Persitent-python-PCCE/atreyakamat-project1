@@ -5,7 +5,6 @@ pipeline {
         stage('Build') {
             steps {
                 checkout scm
-                apt install -y python3-pip
             }
         }
         stage('Installing Dependencies') {
